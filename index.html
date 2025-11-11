@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Login / Signup</title>
+<title>Login / Signup (Firebase)</title>
 <style>
 body{font-family:system-ui;background:#0f1724;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0}
 .container{width:100%;max-width:400px;padding:24px;background:#111827;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.4)}
@@ -17,7 +17,6 @@ button{background:#06b6d4;color:#000;font-weight:600;cursor:pointer}
 </head>
 <body>
 <div class="container">
-  <!-- Signup / Login Forms -->
   <div id="forms">
     <h2 id="form-title">Sign Up</h2>
     <form id="signup-form">
@@ -35,7 +34,6 @@ button{background:#06b6d4;color:#000;font-weight:600;cursor:pointer}
     <div class="small">Admin? <a href="admin.html" style="color:#06b6d4">Go to dashboard</a></div>
   </div>
 
-  <!-- User Dashboard -->
   <div id="user-dashboard">
     <h2>Welcome, <span id="user-name"></span></h2>
     <p>Email: <span id="user-email"></span></p>
@@ -45,94 +43,96 @@ button{background:#06b6d4;color:#000;font-weight:600;cursor:pointer}
   </div>
 </div>
 
-<script>
-const STORAGE_KEY='demo_users_v1';
-const MSG_KEY='demo_messages_v1';
-const ADMIN_CREDENTIALS={email:'harrisonrobertwoods@gmail.com',password:'AML3!45sas'};
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+const firebaseConfig = {
+ // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyA10rt9j5WUTp8-T0i7qcpWp1uIu3oI_Wc",
+  authDomain: "login-dashboard-4aa87.firebaseapp.com",
+  projectId: "login-dashboard-4aa87",
+  storageBucket: "login-dashboard-4aa87.firebasestorage.app",
+  messagingSenderId: "196276515757",
+  appId: "1:196276515757:web:c8420101386483f40de724",
+  measurementId: "G-LBEHKCTYLF"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const ADMIN_EMAIL = "harrisonrobertwoods@gmail.com";
+
 const $=id=>document.getElementById(id);
 
-const saveUsers=users=>localStorage.setItem(STORAGE_KEY,JSON.stringify(users));
-const loadUsers=()=>JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
-const loadMessages=()=>JSON.parse(localStorage.getItem(MSG_KEY)||'{}');
+function showLogin(){ $('signup-form').style.display='none'; $('login-form').style.display='block'; $('form-title').innerText='Login'; $('switch-form').innerText='Need an account? Sign up'; }
+function showSignup(){ $('signup-form').style.display='block'; $('login-form').style.display='none'; $('form-title').innerText='Sign Up'; $('switch-form').innerText='Already have an account? Login'; }
 
-let currentUser=null;
+$('switch-form').onclick=()=>($('signup-form').style.display==='none'?showSignup():showLogin());
 
-// --- Signup ---
-$('signup-form').addEventListener('submit', e=>{
+// Signup
+$('signup-form').addEventListener('submit', async e=>{
   e.preventDefault();
   const name=$('s-name').value.trim();
-  const email=$('s-email').value.trim().toLowerCase();
+  const email=$('s-email').value.trim();
   const pass=$('s-pass').value;
-  const users=loadUsers();
-  if(users.some(u=>u.email===email)){alert('Email already used');return}
-  users.push({id:Date.now().toString(36),name,email,password:pass});
-  saveUsers(users);
-  alert('Account created!');
-  showLogin();
+  try {
+    const cred=await createUserWithEmailAndPassword(auth,email,pass);
+    await updateProfile(cred.user,{displayName:name});
+    await setDoc(doc(db,"users",cred.user.uid),{name,email});
+    alert('Account created!');
+  } catch(err){alert(err.message);}
 });
 
-// --- Login ---
-$('login-form').addEventListener('submit', e=>{
+// Login
+$('login-form').addEventListener('submit', async e=>{
   e.preventDefault();
-  const email=$('l-email').value.trim().toLowerCase();
+  const email=$('l-email').value.trim();
   const pass=$('l-pass').value;
-  const users=loadUsers();
-  if(email===ADMIN_CREDENTIALS.email && pass===ADMIN_CREDENTIALS.password){
-    location.href='admin.html';
-    return;
-  }
-  const user=users.find(u=>u.email===email && u.password===pass);
-  if(!user){alert('Invalid credentials'); return}
-  currentUser=user;
-  localStorage.setItem('demo_current_user', user.id);
-  showUserDashboard();
+  try{
+    await signInWithEmailAndPassword(auth,email,pass);
+  }catch(err){alert(err.message);}
 });
 
-// --- Switch forms ---
-const switcher=$('switch-form');
-switcher.onclick=()=>{
-  $('signup-form').style.display==='none'?showSignup():showLogin();
-};
-function showLogin(){
-  $('signup-form').style.display='none';
-  $('login-form').style.display='block';
-  $('form-title').innerText='Login';
-  switcher.innerText='Need an account? Sign up';
-}
-function showSignup(){
-  $('signup-form').style.display='block';
-  $('login-form').style.display='none';
-  $('form-title').innerText='Sign Up';
-  switcher.innerText='Already have an account? Login';
-}
+// Dashboard
+onAuthStateChanged(auth, async user=>{
+  if(user){
+    if(user.email===ADMIN_EMAIL){ location.href='admin.html'; return; }
+    $('forms').style.display='none';
+    $('user-dashboard').style.display='block';
+    $('user-name').innerText=user.displayName||'User';
+    $('user-email').innerText=user.email;
+  }else{
+    $('forms').style.display='block';
+    $('user-dashboard').style.display='none';
+  }
+});
 
-// --- User Dashboard ---
-function showUserDashboard(){
-  $('forms').style.display='none';
-  $('user-dashboard').style.display='block';
-  $('user-name').innerText = currentUser.name;
-  $('user-email').innerText = currentUser.email;
-}
-
-$('view-messages').onclick=()=>{
-  const msgs=loadMessages();
-  const msg=msgs[currentUser.id]||'No messages from admin yet.';
-  const msgDiv=$('messages');
-  msgDiv.innerText=msg;
-  msgDiv.style.display='block';
+$('view-messages').onclick=async()=>{
+  const user=auth.currentUser;
+  if(!user) return;
+  const msgDoc=await getDoc(doc(db,"messages",user.uid));
+  $('messages').innerText=msgDoc.exists()?msgDoc.data().text:"No messages from admin yet.";
+  $('messages').style.display='block';
 };
 
-$('logout').onclick=()=>{
-  localStorage.removeItem('demo_current_user');
-  location.reload();
-};
-
-// --- Auto-login if already stored ---
-const storedId = localStorage.getItem('demo_current_user');
-if(storedId){
-  const user=loadUsers().find(u=>u.id===storedId);
-  if(user){currentUser=user; showUserDashboard();}
-}
+$('logout').onclick=()=>signOut(auth);
 </script>
 </body>
 </html>
