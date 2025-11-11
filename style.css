@@ -42,8 +42,11 @@ button:hover {
 
 /* ====== Login/Signup Page ====== */
 body.index-page {
-  background: linear-gradient(135deg, #0f172a, #1e3a8a);
-  color: #f8fafc;
+  background: linear-gradient(135deg, #00ff80, #00cc44);
+color: #0a0a0a;
+text-shadow: 0 0 10px #00ff80;
+box-shadow: 0 0 30px #00ff80;
+
 }
 
 body.index-page .container {
