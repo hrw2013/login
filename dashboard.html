@@ -1,64 +1,62 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>User Dashboard</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>User Dashboard</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body class="dashboard-page">
-<div class="container">
-  <h2>Welcome, <span id="user-name"></span> 👋</h2>
-  <p>Email: <span id="user-email"></span></p>
-
-  <div id="message-section">
-    <h3>Your Messages</h3>
-    <div id="messages">Loading...</div>
-  </div>
-
-  <div style="margin-top: 20px;">
+  <div class="container">
+    <h2>Welcome, <span id="user-name"></span></h2>
+    <p>Email: <span id="user-email"></span></p>
+    <button id="view-messages">View My Messages</button>
+    <div id="messages"></div>
     <button id="logout">Logout</button>
   </div>
-</div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyA10rt9j5WUTp8-T0i7qcpWp1uIu3oI_Wc",
-  authDomain: "login-dashboard-4aa87.firebaseapp.com",
-  projectId: "login-dashboard-4aa87",
-  storageBucket: "login-dashboard-4aa87.firebasestorage.app",
-  messagingSenderId: "196276515757",
-  appId: "1:196276515757:web:c8420101386483f40de724",
-  measurementId: "G-LBEHKCTYLF"
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyA10rt9j5WUTp8-T0i7qcpWp1uIu3oI_Wc",
+    authDomain: "login-dashboard-4aa87.firebaseapp.com",
+    projectId: "login-dashboard-4aa87",
+    storageBucket: "login-dashboard-4aa87.firebasestorage.app",
+    messagingSenderId: "196276515757",
+    appId: "1:196276515757:web:c8420101386483f40de724",
+    measurementId: "G-LBEHKCTYLF"
+  };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-onAuthStateChanged(auth, async user => {
-  if (!user) {
-    location.href = 'index.html';
-    return;
-  }
+  const $ = id => document.getElementById(id);
 
-  document.getElementById('user-name').innerText = user.displayName || 'User';
-  document.getElementById('user-email').innerText = user.email;
+  onAuthStateChanged(auth, async user => {
+    if (!user) {
+      window.location.href = "index.html";
+      return;
+    }
+    $('user-name').innerText = user.displayName || 'User';
+    $('user-email').innerText = user.email;
+  });
 
-  // Load message
-  const msgDoc = await getDoc(doc(db, "messages", user.uid));
-  const msgDiv = document.getElementById('messages');
-  msgDiv.innerText = msgDoc.exists() ? msgDoc.data().text : "No messages from admin yet.";
-});
+  $('view-messages').onclick = async () => {
+    const user = auth.currentUser;
+    const msgDoc = await getDoc(doc(db, "messages", user.uid));
+    $('messages').innerText = msgDoc.exists()
+      ? msgDoc.data().text
+      : "No messages from admin yet.";
+  };
 
-document.getElementById('logout').onclick = async () => {
-  await signOut(auth);
-  location.href = 'index.html';
-};
-</script>
+  $('logout').onclick = async () => {
+    await signOut(auth);
+    window.location.href = "index.html";
+  };
+  </script>
 </body>
 </html>
