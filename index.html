@@ -11,34 +11,54 @@ input,button{width:100%;padding:10px;margin-top:8px;border-radius:6px;border:non
 input{background:#1e293b;color:white}
 button{background:#06b6d4;color:#000;font-weight:600;cursor:pointer}
 .small{color:#94a3b8;font-size:14px;text-align:center;margin-top:8px;cursor:pointer}
+#user-dashboard{display:none;}
+#messages{margin-top:10px;padding:10px;background:#1e293b;border-radius:6px;display:none;}
 </style>
 </head>
 <body>
 <div class="container">
-  <h2 id="form-title">Sign Up</h2>
-  <form id="signup-form">
-    <input id="s-name" placeholder="Full name" required />
-    <input id="s-email" type="email" placeholder="Email" required />
-    <input id="s-pass" type="password" placeholder="Password" required />
-    <button type="submit">Sign Up</button>
-  </form>
-  <form id="login-form" style="display:none">
-    <input id="l-email" type="email" placeholder="Email" required />
-    <input id="l-pass" type="password" placeholder="Password" required />
-    <button type="submit">Login</button>
-  </form>
-  <div class="small" id="switch-form">Already have an account? Login</div>
-  <div class="small">Admin? <a href="admin.html" style="color:#06b6d4">Go to dashboard</a></div>
+  <!-- Signup / Login Forms -->
+  <div id="forms">
+    <h2 id="form-title">Sign Up</h2>
+    <form id="signup-form">
+      <input id="s-name" placeholder="Full name" required />
+      <input id="s-email" type="email" placeholder="Email" required />
+      <input id="s-pass" type="password" placeholder="Password" required />
+      <button type="submit">Sign Up</button>
+    </form>
+    <form id="login-form" style="display:none">
+      <input id="l-email" type="email" placeholder="Email" required />
+      <input id="l-pass" type="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+    <div class="small" id="switch-form">Already have an account? Login</div>
+    <div class="small">Admin? <a href="admin.html" style="color:#06b6d4">Go to dashboard</a></div>
+  </div>
+
+  <!-- User Dashboard -->
+  <div id="user-dashboard">
+    <h2>Welcome, <span id="user-name"></span></h2>
+    <p>Email: <span id="user-email"></span></p>
+    <button id="view-messages">View My Messages</button>
+    <div id="messages"></div>
+    <button id="logout">Logout</button>
+  </div>
 </div>
+
 <script>
 const STORAGE_KEY='demo_users_v1';
 const MSG_KEY='demo_messages_v1';
 const ADMIN_CREDENTIALS={email:'harrisonrobertwoods@gmail.com',password:'AML3!45sas'};
 const $=id=>document.getElementById(id);
+
 const saveUsers=users=>localStorage.setItem(STORAGE_KEY,JSON.stringify(users));
 const loadUsers=()=>JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+const loadMessages=()=>JSON.parse(localStorage.getItem(MSG_KEY)||'{}');
 
-$('signup-form').addEventListener('submit',e=>{
+let currentUser=null;
+
+// --- Signup ---
+$('signup-form').addEventListener('submit', e=>{
   e.preventDefault();
   const name=$('s-name').value.trim();
   const email=$('s-email').value.trim().toLowerCase();
@@ -51,22 +71,24 @@ $('signup-form').addEventListener('submit',e=>{
   showLogin();
 });
 
-$('login-form').addEventListener('submit',e=>{
+// --- Login ---
+$('login-form').addEventListener('submit', e=>{
   e.preventDefault();
   const email=$('l-email').value.trim().toLowerCase();
   const pass=$('l-pass').value;
   const users=loadUsers();
-  if(email===ADMIN_CREDENTIALS.email&&pass===ADMIN_CREDENTIALS.password){
+  if(email===ADMIN_CREDENTIALS.email && pass===ADMIN_CREDENTIALS.password){
     location.href='admin.html';
     return;
   }
-  const user=users.find(u=>u.email===email&&u.password===pass);
-  if(!user){alert('Invalid credentials');return}
-  localStorage.setItem('demo_current_user',user.id);
-  const msgs=JSON.parse(localStorage.getItem(MSG_KEY)||'{}');
-  alert('Welcome '+user.name+'!\n\nAdmin message: '+(msgs[user.id]||'(none)'));
+  const user=users.find(u=>u.email===email && u.password===pass);
+  if(!user){alert('Invalid credentials'); return}
+  currentUser=user;
+  localStorage.setItem('demo_current_user', user.id);
+  showUserDashboard();
 });
 
+// --- Switch forms ---
 const switcher=$('switch-form');
 switcher.onclick=()=>{
   $('signup-form').style.display==='none'?showSignup():showLogin();
@@ -82,6 +104,34 @@ function showSignup(){
   $('login-form').style.display='none';
   $('form-title').innerText='Sign Up';
   switcher.innerText='Already have an account? Login';
+}
+
+// --- User Dashboard ---
+function showUserDashboard(){
+  $('forms').style.display='none';
+  $('user-dashboard').style.display='block';
+  $('user-name').innerText = currentUser.name;
+  $('user-email').innerText = currentUser.email;
+}
+
+$('view-messages').onclick=()=>{
+  const msgs=loadMessages();
+  const msg=msgs[currentUser.id]||'No messages from admin yet.';
+  const msgDiv=$('messages');
+  msgDiv.innerText=msg;
+  msgDiv.style.display='block';
+};
+
+$('logout').onclick=()=>{
+  localStorage.removeItem('demo_current_user');
+  location.reload();
+};
+
+// --- Auto-login if already stored ---
+const storedId = localStorage.getItem('demo_current_user');
+if(storedId){
+  const user=loadUsers().find(u=>u.id===storedId);
+  if(user){currentUser=user; showUserDashboard();}
 }
 </script>
 </body>
