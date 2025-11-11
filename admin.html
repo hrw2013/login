@@ -5,106 +5,94 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Admin Dashboard</title>
 <style>
-body{font-family:system-ui;background:#0f1724;color:#fff;margin:0;padding:24px}
-.container{max-width:700px;margin:auto;background:#111827;padding:24px;border-radius:10px}
-input,button,textarea{width:100%;padding:10px;margin-top:8px;border-radius:6px;border:none}
-input,textarea{background:#1e293b;color:white}
-button{background:#06b6d4;color:#000;font-weight:600;cursor:pointer}
-.user{background:#1e293b;padding:10px;border-radius:8px;margin-top:10px}
-.user-header{display:flex;justify-content:space-between;align-items:center}
+body{font-family:system-ui;background:#0f1724;color:#fff;padding:20px;}
+table{width:100%;border-collapse:collapse;margin-top:20px;}
+td,th{border:1px solid #334155;padding:8px;}
+button{background:#06b6d4;color:#000;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;margin:2px;}
 </style>
 </head>
 <body>
-<div class="container">
-  <h2>Admin Dashboard</h2>
-  <form id="admin-login">
-    <input id="a-email" placeholder="Admin email" type="email" required />
-    <input id="a-pass" placeholder="Admin password" type="password" required />
-    <button type="submit">Login</button>
-  </form>
-  <div id="dashboard" style="display:none">
-    <button id="logout">Logout</button>
-    <h3>Users</h3>
-    <div id="users"></div>
-    <h3>Broadcast Message</h3>
-    <textarea id="broadcast" rows="3" placeholder="Message for all users"></textarea>
-    <button id="sendAll">Send to All</button>
-  </div>
-</div>
-<script>
-const STORAGE_KEY='demo_users_v1';
-const MSG_KEY='demo_messages_v1';
-const ADMIN_CREDENTIALS={email:'harrisonrobertwoods@gmail.com',password:'AML3!45sas'};
-const $=id=>document.getElementById(id);
-const saveMessages=msgs=>localStorage.setItem(MSG_KEY,JSON.stringify(msgs));
-const loadMessages=()=>JSON.parse(localStorage.getItem(MSG_KEY)||'{}');
-const saveUsers=users=>localStorage.setItem(STORAGE_KEY,JSON.stringify(users));
-const loadUsers=()=>JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+<h2>Admin Dashboard</h2>
+<p id="admin-email"></p>
+<table id="user-table">
+<thead><tr><th>Name</th><th>Email</th><th>Message</th><th>Action</th></tr></thead>
+<tbody></tbody>
+</table>
+<button id="logout">Logout</button>
 
-$('admin-login').addEventListener('submit',e=>{
-  e.preventDefault();
-  const email=$('a-email').value.trim().toLowerCase();
-  const pass=$('a-pass').value;
-  if(email===ADMIN_CREDENTIALS.email&&pass===ADMIN_CREDENTIALS.password){
-    localStorage.setItem('demo_admin_token','1');
-    showDashboard();
-  } else alert('Invalid admin credentials');
-});
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-$('logout').onclick=()=>{localStorage.removeItem('demo_admin_token');location.reload();};
-$('sendAll').onclick=()=>{
-  const text=$('broadcast').value.trim();
-  if(!text)return alert('Enter a message');
-  const users=loadUsers();
-  const msgs=loadMessages();
-  users.forEach(u=>msgs[u.id]=text);
-  saveMessages(msgs);
-  alert('Broadcast sent');
-  renderUsers();
+const firebaseConfig = {
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyA10rt9j5WUTp8-T0i7qcpWp1uIu3oI_Wc",
+  authDomain: "login-dashboard-4aa87.firebaseapp.com",
+  projectId: "login-dashboard-4aa87",
+  storageBucket: "login-dashboard-4aa87.firebasestorage.app",
+  messagingSenderId: "196276515757",
+  appId: "1:196276515757:web:c8420101386483f40de724",
+  measurementId: "G-LBEHKCTYLF"
 };
 
-function showDashboard(){
-  $('admin-login').style.display='none';
-  $('dashboard').style.display='block';
-  renderUsers();
-}
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+};
 
-function renderUsers(){
-  const users=loadUsers();
-  const msgs=loadMessages();
-  const box=$('users'); box.innerHTML='';
-  if(users.length===0){box.innerHTML='<i>No users yet</i>';return}
-  users.forEach(u=>{
-    const d=document.createElement('div');
-    d.className='user';
-    d.innerHTML=`<div class='user-header'><b>${u.name}</b><span>${u.email}</span></div>
-<textarea rows='2' id='msg-${u.id}'>${msgs[u.id]||''}</textarea>
-<button data-id='${u.id}'>Save Message</button>
-<button data-del='${u.id}' style='background:red;color:#fff;margin-top:4px'>Delete Account</button>`;
-    box.appendChild(d);
-    // Save message button
-    d.querySelector('button[data-id]').onclick=()=>{
-      const text=d.querySelector('textarea').value;
-      msgs[u.id]=text;
-      saveMessages(msgs);
-      alert('Saved');
-    };
-    // Delete account button
-    d.querySelector('button[data-del]').onclick=()=>{
-      if(confirm('Delete account '+u.email+'?')){
-        const updatedUsers=loadUsers().filter(user=>user.id!==u.id);
-        saveUsers(updatedUsers);
-        const updatedMsgs=loadMessages();
-        delete updatedMsgs[u.id];
-        saveMessages(updatedMsgs);
-        renderUsers();
-        alert('Account deleted');
-      }
-    };
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const ADMIN_EMAIL = "harrisonrobertwoods@gmail.com";
+
+onAuthStateChanged(auth, async user=>{
+  if(!user || user.email!==ADMIN_EMAIL){location.href='index.html';return;}
+  document.getElementById('admin-email').innerText="Logged in as "+user.email;
+  loadUsers();
+});
+
+async function loadUsers(){
+  const tbody=document.querySelector('#user-table tbody');
+  tbody.innerHTML='';
+  const snap=await getDocs(collection(db,"users"));
+  snap.forEach(u=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>${u.data().name}</td>
+      <td>${u.data().email}</td>
+      <td><input id="msg-${u.id}" placeholder="Enter message" style="width:90%"></td>
+      <td>
+        <button onclick="sendMsg('${u.id}')">Send</button>
+        <button onclick="delUser('${u.id}')">Delete</button>
+      </td>`;
+    tbody.appendChild(tr);
   });
 }
 
-if(localStorage.getItem('demo_admin_token')==='1') showDashboard();
+window.sendMsg=async uid=>{
+  const text=document.getElementById('msg-'+uid).value;
+  await setDoc(doc(db,"messages",uid),{text});
+  alert('Message saved');
+};
+
+window.delUser=async uid=>{
+  if(!confirm('Delete this user?')) return;
+  await deleteDoc(doc(db,"users",uid));
+  await deleteDoc(doc(db,"messages",uid));
+  alert('Deleted');
+  loadUsers();
+};
+
+document.getElementById('logout').onclick=()=>signOut(auth);
 </script>
 </body>
 </html>
