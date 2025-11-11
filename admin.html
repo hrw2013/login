@@ -38,6 +38,7 @@ const ADMIN_CREDENTIALS={email:'harrisonrobertwoods@gmail.com',password:'AML3!45
 const $=id=>document.getElementById(id);
 const saveMessages=msgs=>localStorage.setItem(MSG_KEY,JSON.stringify(msgs));
 const loadMessages=()=>JSON.parse(localStorage.getItem(MSG_KEY)||'{}');
+const saveUsers=users=>localStorage.setItem(STORAGE_KEY,JSON.stringify(users));
 const loadUsers=()=>JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
 
 $('admin-login').addEventListener('submit',e=>{
@@ -74,16 +75,31 @@ function renderUsers(){
   const box=$('users'); box.innerHTML='';
   if(users.length===0){box.innerHTML='<i>No users yet</i>';return}
   users.forEach(u=>{
-    const d=document.createElement('div');d.className='user';
+    const d=document.createElement('div');
+    d.className='user';
     d.innerHTML=`<div class='user-header'><b>${u.name}</b><span>${u.email}</span></div>
 <textarea rows='2' id='msg-${u.id}'>${msgs[u.id]||''}</textarea>
-<button data-id='${u.id}'>Save Message</button>`;
+<button data-id='${u.id}'>Save Message</button>
+<button data-del='${u.id}' style='background:red;color:#fff;margin-top:4px'>Delete Account</button>`;
     box.appendChild(d);
-    d.querySelector('button').onclick=()=>{
+    // Save message button
+    d.querySelector('button[data-id]').onclick=()=>{
       const text=d.querySelector('textarea').value;
       msgs[u.id]=text;
       saveMessages(msgs);
       alert('Saved');
+    };
+    // Delete account button
+    d.querySelector('button[data-del]').onclick=()=>{
+      if(confirm('Delete account '+u.email+'?')){
+        const updatedUsers=loadUsers().filter(user=>user.id!==u.id);
+        saveUsers(updatedUsers);
+        const updatedMsgs=loadMessages();
+        delete updatedMsgs[u.id];
+        saveMessages(updatedMsgs);
+        renderUsers();
+        alert('Account deleted');
+      }
     };
   });
 }
