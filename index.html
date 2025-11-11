@@ -1,163 +1,110 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Login / Signup (Firebase)</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login / Signup</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
-<div class="container">
-  <div id="forms">
+<body class="index-page">
+  <div class="container">
     <h2 id="form-title">Sign Up</h2>
+
     <form id="signup-form">
       <input id="s-name" placeholder="Full name" required />
       <input id="s-email" type="email" placeholder="Email" required />
       <input id="s-pass" type="password" placeholder="Password" required />
       <button type="submit">Sign Up</button>
     </form>
+
     <form id="login-form" style="display:none">
       <input id="l-email" type="email" placeholder="Email" required />
       <input id="l-pass" type="password" placeholder="Password" required />
       <button type="submit">Login</button>
     </form>
+
     <div class="small" id="switch-form">Already have an account? Login</div>
-    <div class="small">Admin? <a href="admin.html" style="color:#06b6d4">Go to dashboard</a></div>
   </div>
 
-  <div id="user-dashboard">
-    <h2>Welcome, <span id="user-name"></span></h2>
-    <p>Email: <span id="user-email"></span></p>
-    <button id="view-messages">View My Messages</button>
-    <div id="messages"></div>
-    <button id="logout">Logout</button>
-  </div>
-</div>
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import { 
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, 
+    onAuthStateChanged, updateProfile 
+  } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+  import { 
+    getFirestore, doc, setDoc 
+  } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-<!-- Firebase SDKs -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import {
-  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  signOut, onAuthStateChanged, updateProfile
-} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-import {
-  getFirestore, doc, setDoc, getDoc, getFirestore as _getFirestore
-} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyA10rt9j5WUTp8-T0i7qcpWp1uIu3oI_Wc",
+    authDomain: "login-dashboard-4aa87.firebaseapp.com",
+    projectId: "login-dashboard-4aa87",
+    storageBucket: "login-dashboard-4aa87.firebasestorage.app",
+    messagingSenderId: "196276515757",
+    appId: "1:196276515757:web:c8420101386483f40de724",
+    measurementId: "G-LBEHKCTYLF"
+  };
 
-// ✅ Your Firebase configuration (already in your repo)
-const firebaseConfig = {
-  apiKey: "AIzaSyA10rt9j5WUTp8-T0i7qcpWp1uIu3oI_Wc",
-  authDomain: "login-dashboard-4aa87.firebaseapp.com",
-  projectId: "login-dashboard-4aa87",
-  storageBucket: "login-dashboard-4aa87.firebasestorage.app",
-  messagingSenderId: "196276515757",
-  appId: "1:196276515757:web:c8420101386483f40de724",
-  measurementId: "G-LBEHKCTYLF"
-};
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+  const ADMIN_EMAIL = "harrisonrobertwoods@gmail.com";
+  const $ = id => document.getElementById(id);
 
-const ADMIN_EMAIL = "harrisonrobertwoods@gmail.com";
-const $ = id => document.getElementById(id);
-
-function showLogin() {
-  $('signup-form').style.display='none';
-  $('login-form').style.display='block';
-  $('form-title').innerText='Login';
-  $('switch-form').innerText='Need an account? Sign up';
-}
-function showSignup() {
-  $('signup-form').style.display='block';
-  $('login-form').style.display='none';
-  $('form-title').innerText='Sign Up';
-  $('switch-form').innerText='Already have an account? Login';
-}
-$('switch-form').onclick = () =>
-  ($('signup-form').style.display==='none' ? showSignup() : showLogin());
-
-// Signup with validation & normalized email
-$('signup-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  const name = $('s-name').value.trim();
-  const email = $('s-email').value.trim().toLowerCase();
-  const pass = $('s-pass').value;
-  if(!name || !email || !pass){ alert('Please fill all fields'); return; }
-  try {
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
-    await updateProfile(cred.user, { displayName: name });
-    await setDoc(doc(db, "users", cred.user.uid), { name, email });
-    alert('Account created!');
-    // optionally log user in automatically — Firebase already signs them in
-  } catch (err) {
-    console.error(err);
-    alert('Signup failed: ' + err.message);
+  function showLogin() {
+    $('signup-form').style.display='none';
+    $('login-form').style.display='block';
+    $('form-title').innerText='Login';
+    $('switch-form').innerText='Need an account? Sign up';
   }
-});
 
-// Login
-$('login-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  const email = $('l-email').value.trim().toLowerCase();
-  const pass = $('l-pass').value;
-  if(!email || !pass){ alert('Please enter credentials'); return; }
-  try {
-    await signInWithEmailAndPassword(auth, email, pass);
-  } catch (err) {
-    console.error(err);
-    alert('Login failed: ' + err.message);
+  function showSignup() {
+    $('signup-form').style.display='block';
+    $('login-form').style.display='none';
+    $('form-title').innerText='Sign Up';
+    $('switch-form').innerText='Already have an account? Login';
   }
-});
 
-// Auth state handling (client)
-onAuthStateChanged(auth, user => {
-  // If user is admin, redirect to admin page
-  if (user) {
-   if (user.email === ADMIN_EMAIL) {
-  location.href = 'admin.html';
-} else {
-  location.href = 'dashboard.html';
-}
+  $('switch-form').onclick = () =>
+    ($('signup-form').style.display==='none' ? showSignup() : showLogin());
 
+  // Signup
+  $('signup-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = $('s-name').value.trim();
+    const email = $('s-email').value.trim();
+    const pass = $('s-pass').value;
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(cred.user, { displayName: name });
+      await setDoc(doc(db, "users", cred.user.uid), { name, email });
+      alert('Account created! Redirecting...');
+      window.location.href = "dashboard.html";
+    } catch (err) { alert(err.message); }
+  });
+
+  // Login
+  $('login-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = $('l-email').value.trim();
+    const pass = $('l-pass').value;
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch (err) { alert(err.message); }
+  });
+
+  // Redirect if logged in
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      if (user.email === ADMIN_EMAIL) {
+        window.location.href = "admin.html";
+      } else {
+        window.location.href = "dashboard.html";
+      }
     }
-    $('forms').style.display = 'none';
-    $('user-dashboard').style.display = 'block';
-    $('user-name').innerText = user.displayName || 'User';
-    $('user-email').innerText = user.email;
-  } else {
-    $('forms').style.display = 'block';
-    $('user-dashboard').style.display = 'none';
-  }
-});
-
-// View messages
-$('view-messages').onclick = async () => {
-  const user = auth.currentUser;
-  if (!user) return alert('Not signed in');
-  try {
-    const msgDoc = await getDoc(doc(db, "messages", user.uid));
-    $('messages').innerText = msgDoc.exists() ? msgDoc.data().text : "No messages from admin yet.";
-    $('messages').style.display = 'block';
-  } catch (err) {
-    console.error(err);
-    alert('Failed to load message: ' + err.message);
-  }
-};
-
-// Logout with error handling + redirect
-$('logout').onclick = async () => {
-  try {
-    await signOut(auth);
-    alert('Logged out successfully');
-    location.href = 'index.html';
-  } catch (err) {
-    console.error('Logout error:', err);
-    alert('Logout failed: ' + err.message);
-  }
-};
-</script>
+  });
+  </script>
 </body>
 </html>
