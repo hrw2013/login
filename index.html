@@ -116,10 +116,12 @@ $('login-form').addEventListener('submit', async e => {
 onAuthStateChanged(auth, user => {
   // If user is admin, redirect to admin page
   if (user) {
-    if (user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-      // give brief moment to ensure admin.html can initialize
-      location.href = 'admin.html';
-      return;
+   if (user.email === ADMIN_EMAIL) {
+  location.href = 'admin.html';
+} else {
+  location.href = 'dashboard.html';
+}
+
     }
     $('forms').style.display = 'none';
     $('user-dashboard').style.display = 'block';
