@@ -5,18 +5,52 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Admin Dashboard</title>
 <style>
-body{font-family:system-ui;background:#0f1724;color:#fff;padding:20px;}
-table{width:100%;border-collapse:collapse;margin-top:20px;}
-td,th{border:1px solid #334155;padding:8px;}
-button{background:#06b6d4;color:#000;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;margin:2px;}
+body {
+  font-family: system-ui;
+  background: #0f1724;
+  color: #fff;
+  padding: 20px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+td, th {
+  border: 1px solid #334155;
+  padding: 8px;
+}
+button {
+  background: #06b6d4;
+  color: #000;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 2px;
+}
+input {
+  background: #1e293b;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px;
+}
 </style>
 </head>
 <body>
 <h2>Admin Dashboard</h2>
 <p id="admin-email"></p>
 <table id="user-table">
-<thead><tr><th>Name</th><th>Email</th><th>Message</th><th>Action</th></tr></thead>
-<tbody></tbody>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Message</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
 </table>
 <button id="logout">Logout</button>
 
@@ -25,15 +59,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebas
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 import { getFirestore, collection, getDocs, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-const firebaseConfig = {
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// ✅ Your Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyA10rt9j5WUTp8-T0i7qcpWp1uIu3oI_Wc",
   authDomain: "login-dashboard-4aa87.firebaseapp.com",
@@ -44,29 +70,30 @@ const firebaseConfig = {
   measurementId: "G-LBEHKCTYLF"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-};
-
+// ✅ Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const ADMIN_EMAIL = "harrisonrobertwoods@gmail.com";
 
-onAuthStateChanged(auth, async user=>{
-  if(!user || user.email!==ADMIN_EMAIL){location.href='index.html';return;}
-  document.getElementById('admin-email').innerText="Logged in as "+user.email;
+// ✅ Check if admin is logged in
+onAuthStateChanged(auth, async user => {
+  if (!user || user.email !== ADMIN_EMAIL) {
+    location.href = 'index.html';
+    return;
+  }
+  document.getElementById('admin-email').innerText = "Logged in as " + user.email;
   loadUsers();
 });
 
-async function loadUsers(){
-  const tbody=document.querySelector('#user-table tbody');
-  tbody.innerHTML='';
-  const snap=await getDocs(collection(db,"users"));
-  snap.forEach(u=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
+// ✅ Load all users
+async function loadUsers() {
+  const tbody = document.querySelector('#user-table tbody');
+  tbody.innerHTML = '';
+  const snap = await getDocs(collection(db, "users"));
+  snap.forEach(u => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
       <td>${u.data().name}</td>
       <td>${u.data().email}</td>
       <td><input id="msg-${u.id}" placeholder="Enter message" style="width:90%"></td>
@@ -78,21 +105,24 @@ async function loadUsers(){
   });
 }
 
-window.sendMsg=async uid=>{
-  const text=document.getElementById('msg-'+uid).value;
-  await setDoc(doc(db,"messages",uid),{text});
-  alert('Message saved');
+// ✅ Send message to a user
+window.sendMsg = async uid => {
+  const text = document.getElementById('msg-' + uid).value;
+  await setDoc(doc(db, "messages", uid), { text });
+  alert('Message saved for user.');
 };
 
-window.delUser=async uid=>{
-  if(!confirm('Delete this user?')) return;
-  await deleteDoc(doc(db,"users",uid));
-  await deleteDoc(doc(db,"messages",uid));
-  alert('Deleted');
+// ✅ Delete user data
+window.delUser = async uid => {
+  if (!confirm('Delete this user?')) return;
+  await deleteDoc(doc(db, "users", uid));
+  await deleteDoc(doc(db, "messages", uid));
+  alert('User deleted.');
   loadUsers();
 };
 
-document.getElementById('logout').onclick=()=>signOut(auth);
+// ✅ Logout
+document.getElementById('logout').onclick = () => signOut(auth);
 </script>
 </body>
 </html>
