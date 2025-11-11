@@ -1,303 +1,88 @@
-<!--
-File: index.html
-Description: Single-file demo (HTML/CSS/JS) of a login/signup system that uses localStorage.
-Features:
-- User signup + login
-- Admin login (default credentials below)
-- Admin dashboard: view users, send messages to users
-- When a user logs in they see messages sent to them
-
-Default admin credentials (demo):
-  email: admin@site.local
-  password: Admin123!
-
-GitHub-compatible: Drop this file into the root of a repo (index.html). To host with GitHub Pages,
-create a repo, push this file, then enable Pages from the repo Settings -> Pages -> Source: main branch / root.
-
-WARNING: This is a client-side demo using localStorage. Do NOT use for production. Passwords are stored in plaintext
-here for simplicity. For real apps use a backend + secure hashing.
--->
-
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Login / Signup Demo (localStorage)</title>
-  <style>
-    :root{--bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--muted:#94a3b8;color-scheme:dark}
-    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#031022 0%, #071129 100%);color:#e6eef6;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-    .container{width:100%;max-width:980px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 30px rgba(2,6,23,0.6);border-radius:12px;padding:20px;display:grid;grid-template-columns:1fr 380px;gap:20px}
-    header h1{margin:0;font-size:20px}
-    .panel{background:rgba(255,255,255,0.02);padding:16px;border-radius:10px;border:1px solid rgba(255,255,255,0.02)}
-    form{display:flex;flex-direction:column;gap:8px}
-    label{font-size:13px;color:var(--muted)}
-    input,textarea,select{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
-    button{background:var(--accent);border:none;padding:10px 12px;border-radius:8px;color:#022;cursor:pointer;font-weight:600}
-    .small{font-size:13px;color:var(--muted)}
-    .user-list{max-height:260px;overflow:auto;margin-top:8px}
-    .user-row{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);margin-bottom:8px}
-    .badge{font-size:12px;padding:6px;border-radius:6px}
-    .muted{color:var(--muted)}
-    .top-actions{display:flex;gap:8px;align-items:center}
-    .message-box{white-space:pre-wrap;padding:10px;border-radius:8px;border:1px dashed rgba(255,255,255,0.04);min-height:40px}
-    footer{font-size:12px;color:var(--muted);margin-top:12px}
-    @media (max-width:900px){.container{grid-template-columns:1fr;margin:0;padding:12px} }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Login / Signup</title>
+<style>
+body{font-family:system-ui;background:#0f1724;color:#fff;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0}
+.container{width:100%;max-width:400px;padding:24px;background:#111827;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,0.4)}
+input,button{width:100%;padding:10px;margin-top:8px;border-radius:6px;border:none}
+input{background:#1e293b;color:white}
+button{background:#06b6d4;color:#000;font-weight:600;cursor:pointer}
+.small{color:#94a3b8;font-size:14px;text-align:center;margin-top:8px;cursor:pointer}
+</style>
 </head>
 <body>
-  <div class="container">
-    <div>
-      <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div>
-          <h1>Login / Signup Demo</h1>
-          <div class="small">Admin can message users; messages appear when users log in.</div>
-        </div>
-        <div class="top-actions">
-          <div class="small">Demo admin credentials:</div>
-          <div class="badge" style="background:#07273a;padding:8px">admin@site.local / Admin123!</div>
-        </div>
-      </header>
-
-      <section class="panel" id="auth-area">
-        <!-- Signup -->
-        <div id="signup-card">
-          <h3>Sign up</h3>
-          <form id="signup-form">
-            <label for="s-name">Full name</label>
-            <input id="s-name" required />
-            <label for="s-email">Email</label>
-            <input id="s-email" type="email" required />
-            <label for="s-pass">Password</label>
-            <input id="s-pass" type="password" minlength="6" required />
-            <div style="display:flex;gap:8px;margin-top:6px">
-              <button type="submit">Create account</button>
-              <button type="button" id="goto-login">Have account? Login</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- Login -->
-        <div id="login-card" style="display:none;margin-top:14px">
-          <h3>Login</h3>
-          <form id="login-form">
-            <label for="l-email">Email</label>
-            <input id="l-email" type="email" required />
-            <label for="l-pass">Password</label>
-            <input id="l-pass" type="password" required />
-            <div style="display:flex;gap:8px;margin-top:6px">
-              <button type="submit">Login</button>
-              <button type="button" id="goto-signup">Create account</button>
-            </div>
-          </form>
-        </div>
-
-        <div style="margin-top:12px" class="small muted">Local demo: data stored in browser localStorage. Admin actions affect only your browser profile.</div>
-      </section>
-
-      <section class="panel" id="user-area" style="display:none;margin-top:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <strong id="user-greet"></strong>
-            <div class="small muted" id="user-email"></div>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button id="user-logout">Logout</button>
-          </div>
-        </div>
-
-        <div style="margin-top:10px">
-          <h4>Your message from admin</h4>
-          <div class="message-box" id="user-message">(no message)</div>
-        </div>
-      </section>
-
-    </div>
-
-    <!-- Admin panel column -->
-    <aside>
-      <div class="panel" id="admin-login-panel">
-        <h3>Admin login</h3>
-        <form id="admin-login-form">
-          <label for="a-email">Admin email</label>
-          <input id="a-email" type="email" required />
-          <label for="a-pass">Admin password</label>
-          <input id="a-pass" type="password" required />
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button type="submit">Login as admin</button>
-            <button type="button" id="admin-logout" style="display:none">Logout</button>
-          </div>
-        </form>
-      </div>
-
-      <div class="panel" id="admin-panel" style="display:none;margin-top:12px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <h3>Admin dashboard</h3>
-          <div class="small muted">Signed-up users</div>
-        </div>
-
-        <div class="user-list" id="user-list"></div>
-
-        <hr style="margin:12px 0;border-color:rgba(255,255,255,0.02)" />
-        <h4>Send broadcast</h4>
-        <form id="broadcast-form">
-          <label for="broadcast-text">Message to all users</label>
-          <textarea id="broadcast-text" rows="3"></textarea>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button type="submit">Send to all</button>
-            <button type="button" id="clear-messages">Clear all messages</button>
-          </div>
-        </form>
-      </div>
-
-      <footer>
-        <div class="small muted">Tip: Add this file to a GitHub repo as index.html and enable GitHub Pages to host.</div>
-      </footer>
-    </aside>
-  </div>
-
+<div class="container">
+  <h2 id="form-title">Sign Up</h2>
+  <form id="signup-form">
+    <input id="s-name" placeholder="Full name" required />
+    <input id="s-email" type="email" placeholder="Email" required />
+    <input id="s-pass" type="password" placeholder="Password" required />
+    <button type="submit">Sign Up</button>
+  </form>
+  <form id="login-form" style="display:none">
+    <input id="l-email" type="email" placeholder="Email" required />
+    <input id="l-pass" type="password" placeholder="Password" required />
+    <button type="submit">Login</button>
+  </form>
+  <div class="small" id="switch-form">Already have an account? Login</div>
+  <div class="small">Admin? <a href="admin.html" style="color:#06b6d4">Go to dashboard</a></div>
+</div>
 <script>
-// Minimal client-side "backend" using localStorage. For demo only.
-const STORAGE_KEY = 'demo_users_v1';
-const MSG_KEY = 'demo_messages_v1';
-const ADMIN_CREDENTIALS = { email: 'admin@site.local', password: 'Admin123!' };
+const STORAGE_KEY='demo_users_v1';
+const MSG_KEY='demo_messages_v1';
+const ADMIN_CREDENTIALS={email:'admin@site.local',password:'Admin123!'};
+const $=id=>document.getElementById(id);
+const saveUsers=users=>localStorage.setItem(STORAGE_KEY,JSON.stringify(users));
+const loadUsers=()=>JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
 
-// Helpers
-const $ = id => document.getElementById(id);
-const saveUsers = users => localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-const loadUsers = () => JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-const saveMessages = msgs => localStorage.setItem(MSG_KEY, JSON.stringify(msgs));
-const loadMessages = () => JSON.parse(localStorage.getItem(MSG_KEY) || '{}');
-
-// Init sample admin user (not part of users list; admin is separate)
-
-// Signup
-$('signup-form').addEventListener('submit', e => {
+$('signup-form').addEventListener('submit',e=>{
   e.preventDefault();
-  const name = $('s-name').value.trim();
-  const email = $('s-email').value.trim().toLowerCase();
-  const pass = $('s-pass').value;
-  if(!name||!email||!pass){alert('fill required');return}
-  const users = loadUsers();
-  if(users.some(u=>u.email===email)){alert('email already used');return}
-  const id = Date.now().toString(36) + Math.random().toString(36).slice(2,8);
-  users.push({id,name,email,password:pass,created:new Date().toISOString()});
+  const name=$('s-name').value.trim();
+  const email=$('s-email').value.trim().toLowerCase();
+  const pass=$('s-pass').value;
+  const users=loadUsers();
+  if(users.some(u=>u.email===email)){alert('Email already used');return}
+  users.push({id:Date.now().toString(36),name,email,password:pass});
   saveUsers(users);
-  alert('account created — you can now login');
-  $('signup-form').reset();
-  showLoginCard();
-  renderAdminList();
+  alert('Account created!');
+  showLogin();
 });
 
-// Login
-$('login-form').addEventListener('submit', e=>{
+$('login-form').addEventListener('submit',e=>{
   e.preventDefault();
-  const email = $('l-email').value.trim().toLowerCase();
-  const pass = $('l-pass').value;
-  const users = loadUsers();
-  const user = users.find(u=>u.email===email&&u.password===pass);
-  if(!user){alert('invalid credentials');return}
-  setCurrentUser(user.id);
-  showUserArea(user);
+  const email=$('l-email').value.trim().toLowerCase();
+  const pass=$('l-pass').value;
+  const users=loadUsers();
+  if(email===ADMIN_CREDENTIALS.email&&pass===ADMIN_CREDENTIALS.password){
+    location.href='admin.html';
+    return;
+  }
+  const user=users.find(u=>u.email===email&&u.password===pass);
+  if(!user){alert('Invalid credentials');return}
+  localStorage.setItem('demo_current_user',user.id);
+  const msgs=JSON.parse(localStorage.getItem(MSG_KEY)||'{}');
+  alert('Welcome '+user.name+'!\n\nAdmin message: '+(msgs[user.id]||'(none)'));
 });
 
-// Navigation buttons
-$('goto-login').addEventListener('click', showLoginCard);
-$('goto-signup').addEventListener('click', showSignupCard);
-
-function showLoginCard(){ $('signup-card').style.display='none'; $('login-card').style.display='block'; }
-function showSignupCard(){ $('signup-card').style.display='block'; $('login-card').style.display='none'; }
-
-// User session
-function setCurrentUser(id){ localStorage.setItem('demo_current_user', id); }
-function clearCurrentUser(){ localStorage.removeItem('demo_current_user'); }
-function getCurrentUser(){ return localStorage.getItem('demo_current_user'); }
-
-$('user-logout').addEventListener('click', ()=>{ clearCurrentUser(); $('user-area').style.display='none'; $('auth-area').style.display='block'; });
-
-function showUserArea(user){
-  $('auth-area').style.display='none';
-  $('user-area').style.display='block';
-  $('user-greet').textContent = `Welcome, ${user.name}`;
-  $('user-email').textContent = user.email;
-  const msgs = loadMessages();
-  const text = msgs[user.id] || '(no message)';
-  $('user-message').textContent = text;
+const switcher=$('switch-form');
+switcher.onclick=()=>{
+  $('signup-form').style.display==='none'?showSignup():showLogin();
+};
+function showLogin(){
+  $('signup-form').style.display='none';
+  $('login-form').style.display='block';
+  $('form-title').innerText='Login';
+  switcher.innerText='Need an account? Sign up';
 }
-
-// Admin login
-$('admin-login-form').addEventListener('submit', e=>{
-  e.preventDefault();
-  const email = $('a-email').value.trim().toLowerCase();
-  const pass = $('a-pass').value;
-  if(email===ADMIN_CREDENTIALS.email && pass===ADMIN_CREDENTIALS.password){
-    localStorage.setItem('demo_admin_token','1');
-    $('admin-login-panel').style.display='none';
-    $('admin-panel').style.display='block';
-    $('admin-logout').style.display='inline-block';
-    renderAdminList();
-  } else alert('invalid admin credentials');
-});
-
-$('admin-logout').addEventListener('click', ()=>{ localStorage.removeItem('demo_admin_token'); $('admin-panel').style.display='none'; $('admin-login-panel').style.display='block'; });
-
-function isAdminLogged(){ return localStorage.getItem('demo_admin_token')==='1'; }
-
-// Admin: render user list with message controls
-function renderAdminList(){
-  const list = $('user-list'); list.innerHTML='';
-  const users = loadUsers();
-  const msgs = loadMessages();
-  if(users.length===0){ list.innerHTML = '<div class="small muted">No users signed up yet.</div>'; return }
-  users.slice().reverse().forEach(u=>{
-    const row = document.createElement('div'); row.className='user-row';
-    const left = document.createElement('div');
-    left.innerHTML = `<div style="font-weight:600">${escapeHtml(u.name)}</div><div class="small muted">${escapeHtml(u.email)}</div>`;
-    const right = document.createElement('div');
-    const msgPreview = msgs[u.id] ? (''+msgs[u.id]).slice(0,40) : '(no message)';
-    const preview = document.createElement('div'); preview.className='small muted'; preview.textContent = msgPreview;
-    const btnWrap = document.createElement('div'); btnWrap.style.display='flex'; btnWrap.style.gap='6px'; btnWrap.style.marginTop='6px';
-
-    const sendBtn = document.createElement('button'); sendBtn.textContent='Send / Edit'; sendBtn.style.padding='6px 8px';
-    sendBtn.addEventListener('click', ()=>openMessageEditor(u));
-    const clearBtn = document.createElement('button'); clearBtn.textContent='Clear'; clearBtn.style.padding='6px 8px'; clearBtn.addEventListener('click', ()=>{ if(confirm('Clear message for '+u.email+'?')){ const m=loadMessages(); delete m[u.id]; saveMessages(m); renderAdminList(); alert('cleared'); } });
-
-    btnWrap.appendChild(sendBtn); btnWrap.appendChild(clearBtn);
-    right.appendChild(preview); right.appendChild(btnWrap);
-
-    row.appendChild(left); row.appendChild(right);
-    list.appendChild(row);
-  });
+function showSignup(){
+  $('signup-form').style.display='block';
+  $('login-form').style.display='none';
+  $('form-title').innerText='Sign Up';
+  switcher.innerText='Already have an account? Login';
 }
-
-// Message editor modal (inline prompt)
-function openMessageEditor(user){
-  const current = loadMessages()[user.id] || '';
-  const text = prompt(`Enter message to send to ${user.email} (leave empty to clear):`, current);
-  if(text===null) return; // cancelled
-  const msgs = loadMessages();
-  if(text.trim()===''){ delete msgs[user.id]; } else { msgs[user.id] = text.trim(); }
-  saveMessages(msgs);
-  renderAdminList();
-  alert('message saved');
-}
-
-// Broadcast
-$('broadcast-form').addEventListener('submit', e=>{ e.preventDefault(); if(!isAdminLogged()){ alert('admin only'); return } const txt = $('broadcast-text').value.trim(); if(!txt){alert('enter text');return} const users = loadUsers(); const msgs = loadMessages(); users.forEach(u=>msgs[u.id] = txt); saveMessages(msgs); renderAdminList(); alert('broadcast sent'); $('broadcast-form').reset(); });
-
-$('clear-messages').addEventListener('click', ()=>{ if(!isAdminLogged()){alert('admin only');return} if(confirm('Clear ALL messages for all users?')){ saveMessages({}); renderAdminList(); alert('cleared all messages'); } });
-
-// Escape helper
-function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;" })[c]); }
-
-// On load: render admin list if admin already logged
-if(isAdminLogged()){ $('admin-login-panel').style.display='none'; $('admin-panel').style.display='block'; $('admin-logout').style.display='inline-block'; renderAdminList(); }
-
-// If user already logged in, show user area
-const cur = getCurrentUser(); if(cur){ const users = loadUsers(); const u = users.find(x=>x.id===cur); if(u){ $('auth-area').style.display='none'; showUserArea(u); } else { clearCurrentUser(); } }
-
-// Expose some dev helpers (optional)
-window.__demoHelpers = { loadUsers, loadMessages, saveUsers, saveMessages };
 </script>
 </body>
 </html>
