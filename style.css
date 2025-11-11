@@ -116,3 +116,36 @@ body.admin-page input {
   background: #38bdf8;
   color: #000;
 }
+
+
+/* ===== User Dashboard Page ===== */
+body.dashboard-page {
+  background: linear-gradient(135deg, #1e3a8a, #7c3aed);
+  color: #f8fafc;
+}
+
+body.dashboard-page .container {
+  background: #312e81;
+  color: white;
+  border: 2px solid #6366f1;
+}
+
+body.dashboard-page button {
+  background: #a78bfa;
+  color: #000;
+}
+
+#message-section {
+  background: #4338ca;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+#messages {
+  margin-top: 10px;
+  background: #1e1b4b;
+  padding: 10px;
+  border-radius: 6px;
+}
+
