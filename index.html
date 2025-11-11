@@ -46,15 +46,15 @@ button{background:#06b6d4;color:#000;font-weight:600;cursor:pointer}
 <!-- Firebase SDKs -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { 
-  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, 
-  signOut, onAuthStateChanged, updateProfile 
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut, onAuthStateChanged, updateProfile
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-import { 
-  getFirestore, doc, setDoc, getDoc 
+import {
+  getFirestore, doc, setDoc, getDoc, getFirestore as _getFirestore
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-// ✅ Your Firebase configuration
+// ✅ Your Firebase configuration (already in your repo)
 const firebaseConfig = {
   apiKey: "AIzaSyA10rt9j5WUTp8-T0i7qcpWp1uIu3oI_Wc",
   authDomain: "login-dashboard-4aa87.firebaseapp.com",
@@ -65,7 +65,7 @@ const firebaseConfig = {
   measurementId: "G-LBEHKCTYLF"
 };
 
-// ✅ Initialize Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -88,36 +88,47 @@ function showSignup() {
 $('switch-form').onclick = () =>
   ($('signup-form').style.display==='none' ? showSignup() : showLogin());
 
-// ✅ Signup
+// Signup with validation & normalized email
 $('signup-form').addEventListener('submit', async e => {
   e.preventDefault();
   const name = $('s-name').value.trim();
-  const email = $('s-email').value.trim();
+  const email = $('s-email').value.trim().toLowerCase();
   const pass = $('s-pass').value;
+  if(!name || !email || !pass){ alert('Please fill all fields'); return; }
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     await updateProfile(cred.user, { displayName: name });
     await setDoc(doc(db, "users", cred.user.uid), { name, email });
     alert('Account created!');
-  } catch (err) { alert(err.message); }
+    // optionally log user in automatically — Firebase already signs them in
+  } catch (err) {
+    console.error(err);
+    alert('Signup failed: ' + err.message);
+  }
 });
 
-// ✅ Login
+// Login
 $('login-form').addEventListener('submit', async e => {
   e.preventDefault();
-  const email = $('l-email').value.trim();
+  const email = $('l-email').value.trim().toLowerCase();
   const pass = $('l-pass').value;
+  if(!email || !pass){ alert('Please enter credentials'); return; }
   try {
     await signInWithEmailAndPassword(auth, email, pass);
-  } catch (err) { alert(err.message); }
+  } catch (err) {
+    console.error(err);
+    alert('Login failed: ' + err.message);
+  }
 });
 
-// ✅ Auth State Handling
-onAuthStateChanged(auth, async user => {
+// Auth state handling (client)
+onAuthStateChanged(auth, user => {
+  // If user is admin, redirect to admin page
   if (user) {
-    if (user.email === ADMIN_EMAIL) { 
-      location.href = 'admin.html'; 
-      return; 
+    if (user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      // give brief moment to ensure admin.html can initialize
+      location.href = 'admin.html';
+      return;
     }
     $('forms').style.display = 'none';
     $('user-dashboard').style.display = 'block';
@@ -129,17 +140,31 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
-// ✅ View Messages
+// View messages
 $('view-messages').onclick = async () => {
   const user = auth.currentUser;
-  if (!user) return;
-  const msgDoc = await getDoc(doc(db, "messages", user.uid));
-  $('messages').innerText = msgDoc.exists() ? msgDoc.data().text : "No messages from admin yet.";
-  $('messages').style.display = 'block';
+  if (!user) return alert('Not signed in');
+  try {
+    const msgDoc = await getDoc(doc(db, "messages", user.uid));
+    $('messages').innerText = msgDoc.exists() ? msgDoc.data().text : "No messages from admin yet.";
+    $('messages').style.display = 'block';
+  } catch (err) {
+    console.error(err);
+    alert('Failed to load message: ' + err.message);
+  }
 };
 
-// ✅ Logout
-$('logout').onclick = () => signOut(auth);
+// Logout with error handling + redirect
+$('logout').onclick = async () => {
+  try {
+    await signOut(auth);
+    alert('Logged out successfully');
+    location.href = 'index.html';
+  } catch (err) {
+    console.error('Logout error:', err);
+    alert('Logout failed: ' + err.message);
+  }
+};
 </script>
 </body>
 </html>
