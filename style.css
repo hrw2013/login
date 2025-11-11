@@ -149,3 +149,20 @@ body.dashboard-page button {
   border-radius: 6px;
 }
 
+
+/* ====== Dashboard Page ====== */
+body.dashboard-page {
+  background: linear-gradient(135deg, #00ff80, #00cc44);
+  color: #0a0a0a;
+}
+
+body.dashboard-page .container {
+  background: #e6ffe6;
+  box-shadow: 0 0 25px #00ff80;
+}
+
+body.dashboard-page button {
+  background: #00cc44;
+  color: white;
+}
+
