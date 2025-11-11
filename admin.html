@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Admin Dashboard</title>
+<style>
+body{font-family:system-ui;background:#0f1724;color:#fff;margin:0;padding:24px}
+.container{max-width:700px;margin:auto;background:#111827;padding:24px;border-radius:10px}
+input,button,textarea{width:100%;padding:10px;margin-top:8px;border-radius:6px;border:none}
+input,textarea{background:#1e293b;color:white}
+button{background:#06b6d4;color:#000;font-weight:600;cursor:pointer}
+.user{background:#1e293b;padding:10px;border-radius:8px;margin-top:10px}
+.user-header{display:flex;justify-content:space-between;align-items:center}
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>Admin Dashboard</h2>
+  <form id="admin-login">
+    <input id="a-email" placeholder="Admin email" type="email" required />
+    <input id="a-pass" placeholder="Admin password" type="password" required />
+    <button type="submit">Login</button>
+  </form>
+  <div id="dashboard" style="display:none">
+    <button id="logout">Logout</button>
+    <h3>Users</h3>
+    <div id="users"></div>
+    <h3>Broadcast Message</h3>
+    <textarea id="broadcast" rows="3" placeholder="Message for all users"></textarea>
+    <button id="sendAll">Send to All</button>
+  </div>
+</div>
+<script>
+const STORAGE_KEY='demo_users_v1';
+const MSG_KEY='demo_messages_v1';
+const ADMIN_CREDENTIALS={email:'admin@site.local',password:'Admin123!'};
+const $=id=>document.getElementById(id);
+const saveMessages=msgs=>localStorage.setItem(MSG_KEY,JSON.stringify(msgs));
+const loadMessages=()=>JSON.parse(localStorage.getItem(MSG_KEY)||'{}');
+const loadUsers=()=>JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+
+$('admin-login').addEventListener('submit',e=>{
+  e.preventDefault();
+  const email=$('a-email').value.trim().toLowerCase();
+  const pass=$('a-pass').value;
+  if(email===ADMIN_CREDENTIALS.email&&pass===ADMIN_CREDENTIALS.password){
+    localStorage.setItem('demo_admin_token','1');
+    showDashboard();
+  } else alert('Invalid admin credentials');
+});
+
+$('logout').onclick=()=>{localStorage.removeItem('demo_admin_token');location.reload();};
+$('sendAll').onclick=()=>{
+  const text=$('broadcast').value.trim();
+  if(!text)return alert('Enter a message');
+  const users=loadUsers();
+  const msgs=loadMessages();
+  users.forEach(u=>msgs[u.id]=text);
+  saveMessages(msgs);
+  alert('Broadcast sent');
+  renderUsers();
+};
+
+function showDashboard(){
+  $('admin-login').style.display='none';
+  $('dashboard').style.display='block';
+  renderUsers();
+}
+
+function renderUsers(){
+  const users=loadUsers();
+  const msgs=loadMessages();
+  const box=$('users'); box.innerHTML='';
+  if(users.length===0){box.innerHTML='<i>No users yet</i>';return}
+  users.forEach(u=>{
+    const d=document.createElement('div');d.className='user';
+    d.innerHTML=`<div class='user-header'><b>${u.name}</b><span>${u.email}</span></div>
+<textarea rows='2' id='msg-${u.id}'>${msgs[u.id]||''}</textarea>
+<button data-id='${u.id}'>Save Message</button>`;
+    box.appendChild(d);
+    d.querySelector('button').onclick=()=>{
+      const text=d.querySelector('textarea').value;
+      msgs[u.id]=text;
+      saveMessages(msgs);
+      alert('Saved');
+    };
+  });
+}
+
+if(localStorage.getItem('demo_admin_token')==='1') showDashboard();
+</script>
+</body>
+</html>
