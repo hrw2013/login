@@ -128,7 +128,17 @@ window.delUser = async uid => {
 };
 
 // ✅ Logout
-document.getElementById('logout').onclick = () => signOut(auth);
+document.getElementById('logout').onclick = async () => {
+  try {
+    await signOut(auth);
+    alert('Logged out successfully!');
+    location.href = 'index.html'; // redirect to login page
+  } catch (err) {
+    console.error('Logout error:', err);
+    alert('Logout failed: ' + err.message);
+  }
+};
+
 </script>
 </body>
 </html>
