@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Admin Dashboard</title>
 <style>
 body.admin-page {
@@ -74,18 +74,14 @@ input {
 
 <script>
 const ADMIN_EMAIL = "harrisonrobertwoods@gmail.com";
-
-// Check admin login
 const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
 if (!loggedInUser || loggedInUser.email !== ADMIN_EMAIL) {
   alert('Access denied. Redirecting to login.');
-  location.href = "index.html";
-} else {
-  document.getElementById('admin-email').innerText = "Logged in as " + loggedInUser.email;
-  loadUsers();
+  location.href = "https://hrw2013.github.io/login/";
 }
 
-// Load users from localStorage
+document.getElementById('admin-email').innerText = "Logged in as " + loggedInUser.email;
+
 function loadUsers() {
   const tbody = document.querySelector("#user-table tbody");
   const users = JSON.parse(localStorage.getItem("users")) || [];
@@ -103,7 +99,7 @@ function loadUsers() {
     tr.innerHTML = `
       <td>${user.name}</td>
       <td>${user.email}</td>
-      <td><input id="msg-${index}" placeholder="Enter message"></td>
+      <td><input id="msg-${index}" placeholder="Enter message" value="${user.message || ''}"></td>
       <td>
         <button onclick="sendMsg(${index})">Send</button>
         <button onclick="deleteUser(${index})">Delete</button>
@@ -112,19 +108,16 @@ function loadUsers() {
     tbody.appendChild(tr);
   });
 }
+loadUsers();
 
-// Send message to one user
 function sendMsg(index) {
   const users = JSON.parse(localStorage.getItem("users")) || [];
   const text = document.getElementById("msg-" + index).value;
-  if (!text.trim()) return alert("Enter a message first.");
-
   users[index].message = text;
   localStorage.setItem("users", JSON.stringify(users));
   alert("Message saved for user.");
 }
 
-// Delete a user
 function deleteUser(index) {
   if (!confirm("Delete this user?")) return;
   const users = JSON.parse(localStorage.getItem("users")) || [];
@@ -134,7 +127,6 @@ function deleteUser(index) {
   alert("User deleted.");
 }
 
-// Message all users
 document.getElementById("msg-all-btn").addEventListener("click", () => {
   const text = document.getElementById("msg-all").value;
   if (!text.trim()) return alert("Enter a message first.");
@@ -145,11 +137,10 @@ document.getElementById("msg-all-btn").addEventListener("click", () => {
   alert("Message sent to all users.");
 });
 
-// Logout
 document.getElementById("logout").addEventListener("click", () => {
   localStorage.removeItem("loggedInUser");
   alert("Logged out successfully!");
-  location.href = "login";
+  location.href = "https://hrw2013.github.io/login/";
 });
 </script>
 </body>
