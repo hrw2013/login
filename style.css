@@ -154,3 +154,8 @@ body.admin-page {
   cursor: pointer;
 }
 
+.table-container {
+  overflow-x: auto; /* prevents table from overflowing */
+  margin-top: 20px;
+}
+
