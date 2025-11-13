@@ -19,7 +19,6 @@ a { color:#0d9488; text-decoration:none; }
 <p>Don't have an account? <a href="signup.html">Sign up</a></p>
 
 <script>
-// Admin email for reference
 const ADMIN_EMAIL = "harrisonrobertwoods@gmail.com";
 
 document.getElementById("login-btn").addEventListener("click", () => {
@@ -28,22 +27,17 @@ document.getElementById("login-btn").addEventListener("click", () => {
 
   if (!email || !password) return alert("Enter email and password");
 
-  // Load users from localStorage
   const users = JSON.parse(localStorage.getItem("users")) || [];
-
-  // Find user
   const user = users.find(u => u.email === email && u.password === password);
 
   if (!user) return alert("Invalid email or password");
 
-  // Save logged-in user
   localStorage.setItem("loggedInUser", JSON.stringify(user));
 
-  // Redirect
   if (email === ADMIN_EMAIL) {
-    location.href = "admin.html";
+    window.location.href = "admin.html";
   } else {
-    alert("Logged in successfully! You are a regular user (not admin).");
+    window.location.href = "welcome.html";
   }
 });
 </script>
