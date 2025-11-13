@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signup</title>
+<style>
+body { font-family: system-ui; padding: 20px; background: #111827; color: #fff; }
+input { display:block; margin:10px 0; padding:6px; width:250px; border-radius:4px; border:none; }
+button { padding:6px 12px; border-radius:4px; border:none; cursor:pointer; background:#14b8a6; color:#000; margin-bottom:10px; }
+a { color:#0d9488; text-decoration:none; }
+</style>
+</head>
+<body>
+<h2>Sign Up</h2>
+<input type="text" id="signup-name" placeholder="Name">
+<input type="email" id="signup-email" placeholder="Email">
+<input type="password" id="signup-password" placeholder="Password">
+<button id="signup-btn">Sign Up</button>
+<p>Already have an account? <a href="index.html">Login</a></p>
+
+<script>
+document.getElementById("signup-btn").addEventListener("click", () => {
+  const name = document.getElementById("signup-name").value.trim();
+  const email = document.getElementById("signup-email").value.trim();
+  const password = document.getElementById("signup-password").value;
+
+  if (!name || !email || !password) return alert("All fields are required");
+
+  let users = JSON.parse(localStorage.getItem("users")) || [];
+
+  // Check if email already exists
+  if (users.find(u => u.email === email)) return alert("Email already registered");
+
+  // Add user
+  users.push({ name, email, password, message: "" });
+  localStorage.setItem("users", JSON.stringify(users));
+
+  alert("Signup successful! You can now login.");
+  location.href = "index.html";
+});
+</script>
+</body>
+</html>
