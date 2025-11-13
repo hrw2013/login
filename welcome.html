@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="style.css">
 <style>
 body {
-  background: linear-gradient(135deg, #14532d, #16a34a); /* Green theme */
+  background: linear-gradient(135deg, #14532d, #16a34a);
   color: #f0fdf4;
   font-family: system-ui;
   display: flex;
@@ -42,10 +42,11 @@ button {
   border-radius: 8px;
   margin-top: 12px;
   display: none;
+  word-wrap: break-word;
 }
 </style>
 </head>
-<body class="welcome-page">
+<body>
 <div class="container">
   <h2>Welcome, <span id="user-name"></span>!</h2>
   <p>Email: <span id="user-email"></span></p>
@@ -56,39 +57,40 @@ button {
   <button id="logout">Logout</button>
 </div>
 
-<script type="module">
-import { auth, db, logout } from './main.js';
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
-
+<script>
 const $ = id => document.getElementById(id);
 
-// ✅ Check if user is logged in
-onAuthStateChanged(auth, async user => {
-  if (!user) {
-    window.location.href = "index.html";
-    return;
-  }
-  $('user-name').innerText = user.displayName || "User";
-  $('user-email').innerText = user.email;
-});
+// ✅ Load logged-in user from localStorage
+const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+if (!loggedInUser) {
+  alert("Please login first.");
+  window.location.href = "index.html";
+}
+
+// Display user info
+$("user-name").innerText = loggedInUser.name;
+$("user-email").innerText = loggedInUser.email;
 
 // ✅ Load messages
-$('view-messages').onclick = async () => {
-  const user = auth.currentUser;
-  if (!user) return;
-  const msgDoc = await getDoc(doc(db, "messages", user.uid));
-  $('messages').innerText = msgDoc.exists()
-    ? msgDoc.data().text
-    : "No messages from admin yet.";
-  $('messages').style.display = 'block';
-};
+$("view-messages").addEventListener("click", () => {
+  const users = JSON.parse(localStorage.getItem("users")) || [];
+  const user = users.find(u => u.email === loggedInUser.email);
+
+  if (!user || !user.message) {
+    $("messages").innerText = "No messages from admin yet.";
+  } else {
+    $("messages").innerText = user.message;
+  }
+
+  $("messages").style.display = "block";
+});
 
 // ✅ Logout
-$('logout').onclick = async () => {
-  await logout();
+$("logout").addEventListener("click", () => {
+  localStorage.removeItem("loggedInUser");
+  alert("Logged out successfully!");
   window.location.href = "index.html";
-};
+});
 </script>
 </body>
 </html>
