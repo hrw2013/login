@@ -4,7 +4,6 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>User Dashboard</title>
-<link rel="stylesheet" href="style.css">
 <style>
 body {
   background: linear-gradient(135deg, #14532d, #16a34a);
@@ -60,36 +59,27 @@ button {
 <script>
 const $ = id => document.getElementById(id);
 
-// ✅ Load logged-in user from localStorage
 const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
 if (!loggedInUser) {
   alert("Please login first.");
-  window.location.href = "index.html";
+  window.location.href = "https://hrw2013.github.io/login/";
 }
 
-// Display user info
 $("user-name").innerText = loggedInUser.name;
 $("user-email").innerText = loggedInUser.email;
 
-// ✅ Load messages
 $("view-messages").addEventListener("click", () => {
   const users = JSON.parse(localStorage.getItem("users")) || [];
   const user = users.find(u => u.email === loggedInUser.email);
 
-  if (!user || !user.message) {
-    $("messages").innerText = "No messages from admin yet.";
-  } else {
-    $("messages").innerText = user.message;
-  }
-
+  $("messages").innerText = (user && user.message) ? user.message : "No messages from admin yet.";
   $("messages").style.display = "block";
 });
 
-// ✅ Logout
 $("logout").addEventListener("click", () => {
   localStorage.removeItem("loggedInUser");
   alert("Logged out successfully!");
-  window.location.href = "index.html";
+  window.location.href = "https://hrw2013.github.io/login/";
 });
 </script>
 </body>
