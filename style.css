@@ -95,6 +95,28 @@ body.admin-page input {
   color: #000;
 }
 
+/* ====== Login/Signup Page ====== */
+body.index-page {
+  background: linear-gradient(135deg, #1e90ff, #0000ff); /* blue gradient */
+  color: #0a0a0a;
+  text-shadow: 0 0 10px #1e90ff; /* blue glow */
+  box-shadow: 0 0 30px #1e90ff;  /* blue shadow */
+}
+
+body.index-page .container {
+  background: #1e293b;
+}
+
+body.index-page button {
+  background: #38bdf8; /* already a nice light blue */
+  color: #000;
+}
+
+body.index-page input {
+  background: #334155;
+  color: white;
+}
+
 
 /* ===== User Dashboard Page ===== */
 body.dashboard-page {
