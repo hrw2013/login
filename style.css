@@ -40,28 +40,6 @@ button:hover {
   opacity: 0.9;
 }
 
-/* ====== Login/Signup Page ====== */
-body.index-page {
-  background: linear-gradient(135deg, #00ff80, #00cc44);
-color: #0a0a0a;
-text-shadow: 0 0 10px #00ff80;
-box-shadow: 0 0 30px #00ff80;
-
-}
-
-body.index-page .container {
-  background: #1e293b;
-}
-
-body.index-page button {
-  background: #38bdf8;
-  color: #000;
-}
-
-body.index-page input {
-  background: #334155;
-  color: white;
-}
 
 /* ====== Admin Page ====== */
 body.admin-page {
