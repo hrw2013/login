@@ -17,7 +17,7 @@ a { color:#0d9488; text-decoration:none; }
 <input type="email" id="signup-email" placeholder="Email">
 <input type="password" id="signup-password" placeholder="Password">
 <button id="signup-btn">Sign Up</button>
-<p>Already have an account? <a href="index.html">Login</a></p>
+<p>Already have an account? <a href="https://hrw2013.github.io/login/">Login</a></p>
 
 <script>
 document.getElementById("signup-btn").addEventListener("click", () => {
@@ -29,15 +29,13 @@ document.getElementById("signup-btn").addEventListener("click", () => {
 
   let users = JSON.parse(localStorage.getItem("users")) || [];
 
-  // Check if email already exists
   if (users.find(u => u.email === email)) return alert("Email already registered");
 
-  // Add user
   users.push({ name, email, password, message: "" });
   localStorage.setItem("users", JSON.stringify(users));
 
   alert("Signup successful! You can now login.");
-  location.href = "index.html";
+  window.location.href = "https://hrw2013.github.io/login/";
 });
 </script>
 </body>
