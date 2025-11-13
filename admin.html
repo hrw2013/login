@@ -6,106 +6,154 @@
 <title>Admin Dashboard</title>
 <link rel="stylesheet" href="style.css">
 <style>
-body {
+body.admin-page {
   background: linear-gradient(135deg, #111827, #0f766e);
+  color: #fff;
+  font-family: system-ui;
+  padding: 20px;
 }
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 20px;
 }
-td, th {
-  border: 1px solid #334155;
-  padding: 8px;
+th, td {
+  border: 1px solid #475569;
+  padding: 10px;
+}
+th {
+  background: #0d9488;
+  color: #000;
+}
+td {
+  background: #134e4a;
+}
+button {
+  background: #14b8a6;
+  color: #000;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 2px;
 }
 input {
-  background: #1e293b;
+  background: #0f766e;
   color: white;
   border: none;
   border-radius: 4px;
   padding: 4px;
-}
-button.small {
-  background: #22d3ee;
-  color: black;
-  margin: 2px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
+  width: 90%;
 }
 </style>
 </head>
-<body>
-<div class="container">
-  <h2>Admin Dashboard</h2>
-  <p id="admin-email"></p>
-
-  <table id="user-table">
-    <thead>
-      <tr><th>Name</th><th>Email</th><th>Message</th><th>Action</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <button id="logout" class="small">Logout</button>
-</div>
+<body class="admin-page">
+<h2>Admin Dashboard</h2>
+<p id="admin-email"></p>
+<table id="user-table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Message</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+<button id="logout">Logout</button>
 
 <script type="module">
-import { auth, db, ADMIN_EMAIL, logout, sendMessage, deleteUser } from './main.js';
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-import { collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import { 
+  getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot 
+} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-const $ = id => document.getElementById(id);
+// ✅ Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyA10rt9j5WUTp8-T0i7qcpWp1uIu3oI_Wc",
+  authDomain: "login-dashboard-4aa87.firebaseapp.com",
+  projectId: "login-dashboard-4aa87",
+  storageBucket: "login-dashboard-4aa87.firebasestorage.app",
+  messagingSenderId: "196276515757",
+  appId: "1:196276515757:web:c8420101386483f40de724",
+  measurementId: "G-LBEHKCTYLF"
+};
 
-// 🔹 Check admin status
-onAuthStateChanged(auth, user => {
+// ✅ Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const ADMIN_EMAIL = "harrisonrobertwoods@gmail.com";
+
+// ✅ Check admin login
+onAuthStateChanged(auth, async user => {
   if (!user || user.email !== ADMIN_EMAIL) {
-    window.location.href = "index.html";
+    alert('Access denied. Redirecting to login.');
+    location.href = 'index.html';
     return;
   }
-  $('admin-email').innerText = `Logged in as ${user.email}`;
-  loadUsers();
+  document.getElementById('admin-email').innerText = "Logged in as " + user.email;
+  loadUsersRealtime();
 });
 
-// 🔹 Live user updates
-function loadUsers() {
+// ✅ Load users in real-time
+function loadUsersRealtime() {
   const tbody = document.querySelector('#user-table tbody');
-  onSnapshot(collection(db, "users"), snapshot => {
+  const usersCol = collection(db, "users");
+
+  onSnapshot(usersCol, snapshot => {
     tbody.innerHTML = '';
+    if (snapshot.empty) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td colspan="4" style="text-align:center;">No users found</td>`;
+      tbody.appendChild(tr);
+      return;
+    }
+
     snapshot.forEach(u => {
       const data = u.data();
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>${data.name}</td>
         <td>${data.email}</td>
-        <td><input id="msg-${u.id}" placeholder="Enter message" style="width:90%"></td>
+        <td><input id="msg-${u.id}" placeholder="Enter message"></td>
         <td>
-          <button class="small" onclick="sendMsg('${u.id}')">Send</button>
-          <button class="small" onclick="delUsr('${u.id}')">Delete</button>
+          <button onclick="sendMsg('${u.id}')">Send</button>
+          <button onclick="delUser('${u.id}')">Delete</button>
         </td>`;
       tbody.appendChild(tr);
     });
   });
 }
 
-// 🔹 Send and delete functions
+// ✅ Send message to user
 window.sendMsg = async uid => {
   const text = document.getElementById('msg-' + uid).value;
-  if (!text.trim()) return alert("Enter a message first.");
-  await sendMessage(uid, text);
-  alert("Message saved for user.");
+  if (!text.trim()) return alert('Enter a message first.');
+  await setDoc(doc(db, "messages", uid), { text });
+  alert('Message saved for user.');
 };
 
-window.delUsr = async uid => {
-  if (!confirm("Delete this user?")) return;
-  await deleteUser(uid);
-  alert("User deleted.");
+// ✅ Delete user
+window.delUser = async uid => {
+  if (!confirm('Delete this user?')) return;
+  await deleteDoc(doc(db, "users", uid));
+  await deleteDoc(doc(db, "messages", uid));
+  alert('User deleted.');
 };
 
-// 🔹 Logout
-$('logout').onclick = async () => {
-  await logout();
-  window.location.href = "index.html";
+// ✅ Logout
+document.getElementById('logout').onclick = async () => {
+  try {
+    await signOut(auth);
+    alert('Logged out successfully!');
+    location.href = 'index.html';
+  } catch (err) {
+    console.error('Logout error:', err);
+    alert('Logout failed: ' + err.message);
+  }
 };
 </script>
 </body>
