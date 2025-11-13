@@ -166,3 +166,21 @@ body.dashboard-page button {
   color: white;
 }
 
+
+/* ---- Page-specific overrides ---- */
+
+/* Index (signup/login) */
+body.index-page {
+  background: linear-gradient(135deg, #0f172a, #1e3a8a);
+}
+
+/* Welcome (user dashboard) */
+body.welcome-page {
+  background: linear-gradient(135deg, #14532d, #16a34a);
+}
+
+/* Admin (dashboard) */
+body.admin-page {
+  background: linear-gradient(135deg, #111827, #0f766e);
+}
+
