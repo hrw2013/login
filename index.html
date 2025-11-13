@@ -1,156 +1,59 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Admin Dashboard</title>
-<style>
-body.admin-page {
-  background: linear-gradient(135deg, #111827, #0f766e);
-  color: #fff;
-  font-family: system-ui;
-  padding: 20px;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-th, td {
-  border: 1px solid #475569;
-  padding: 10px;
-}
-th {
-  background: #0d9488;
-  color: #000;
-}
-td {
-  background: #134e4a;
-}
-button {
-  background: #14b8a6;
-  color: #000;
-  border: none;
-  padding: 6px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  margin: 2px;
-}
-input {
-  background: #0f766e;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 4px;
-  width: 90%;
-}
-.message-all {
-  margin-top: 10px;
-}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login / Signup</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="admin-page">
-<h2>Admin Dashboard</h2>
-<p id="admin-email"></p>
+<body>
+<div class="container">
+  <h2 id="form-title">Sign Up</h2>
+  <form id="signup-form">
+    <input id="s-name" placeholder="Full name" required />
+    <input id="s-email" type="email" placeholder="Email" required />
+    <input id="s-pass" type="password" placeholder="Password" required />
+    <button type="submit">Sign Up</button>
+  </form>
 
-<div class="message-all">
-  <input id="msg-all" placeholder="Enter message for all users" style="width:70%;">
-  <button id="msg-all-btn">Message All</button>
+  <form id="login-form" style="display:none">
+    <input id="l-email" type="email" placeholder="Email" required />
+    <input id="l-pass" type="password" placeholder="Password" required />
+    <button type="submit">Login</button>
+  </form>
+
+  <div class="small" id="switch-form">Already have an account? Login</div>
 </div>
 
-<table id="user-table">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Email</th>
-      <th>Message</th>
-      <th>Action</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+<script type="module">
+import { signup, login } from './main.js';
 
-<button id="logout">Logout</button>
+const $ = id => document.getElementById(id);
+$('switch-form').onclick = () => {
+  const isSignup = $('signup-form').style.display !== 'none';
+  $('signup-form').style.display = isSignup ? 'none' : 'block';
+  $('login-form').style.display = isSignup ? 'block' : 'none';
+  $('form-title').innerText = isSignup ? 'Login' : 'Sign Up';
+};
 
-<script>
-const ADMIN_EMAIL = "harrisonrobertwoods@gmail.com";
-
-// Check admin login
-const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
-if (!loggedInUser || loggedInUser.email !== ADMIN_EMAIL) {
-  alert('Access denied. Redirecting to login.');
-  location.href = "index.html";
-} else {
-  document.getElementById('admin-email').innerText = "Logged in as " + loggedInUser.email;
-  loadUsers();
-}
-
-// Load users from localStorage
-function loadUsers() {
-  const tbody = document.querySelector("#user-table tbody");
-  const users = JSON.parse(localStorage.getItem("users")) || [];
-
-  tbody.innerHTML = "";
-  if (users.length === 0) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="4" style="text-align:center;">No users found</td>`;
-    tbody.appendChild(tr);
-    return;
+$('signup-form').onsubmit = async e => {
+  e.preventDefault();
+  try {
+    await signup($('s-name').value, $('s-email').value, $('s-pass').value);
+    alert("Account created!");
+  } catch (err) {
+    alert(err.message);
   }
+};
 
-  users.forEach((user, index) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${user.name}</td>
-      <td>${user.email}</td>
-      <td><input id="msg-${index}" placeholder="Enter message"></td>
-      <td>
-        <button onclick="sendMsg(${index})">Send</button>
-        <button onclick="deleteUser(${index})">Delete</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-// Send message to one user
-function sendMsg(index) {
-  const users = JSON.parse(localStorage.getItem("users")) || [];
-  const text = document.getElementById("msg-" + index).value;
-  if (!text.trim()) return alert("Enter a message first.");
-
-  users[index].message = text;
-  localStorage.setItem("users", JSON.stringify(users));
-  alert("Message saved for user.");
-}
-
-// Delete a user
-function deleteUser(index) {
-  if (!confirm("Delete this user?")) return;
-  const users = JSON.parse(localStorage.getItem("users")) || [];
-  users.splice(index, 1);
-  localStorage.setItem("users", JSON.stringify(users));
-  loadUsers();
-  alert("User deleted.");
-}
-
-// Message all users
-document.getElementById("msg-all-btn").addEventListener("click", () => {
-  const text = document.getElementById("msg-all").value;
-  if (!text.trim()) return alert("Enter a message first.");
-  const users = JSON.parse(localStorage.getItem("users")) || [];
-  users.forEach(user => user.message = text);
-  localStorage.setItem("users", JSON.stringify(users));
-  loadUsers();
-  alert("Message sent to all users.");
-});
-
-// Logout
-document.getElementById("logout").addEventListener("click", () => {
-  localStorage.removeItem("loggedInUser");
-  alert("Logged out successfully!");
-  location.href = "index.html";
-});
+$('login-form').onsubmit = async e => {
+  e.preventDefault();
+  try {
+    await login($('l-email').value, $('l-pass').value);
+  } catch (err) {
+    alert(err.message);
+  }
+};
 </script>
 </body>
 </html>
