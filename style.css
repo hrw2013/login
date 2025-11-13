@@ -126,3 +126,31 @@ body.admin-page input {
   border-radius: 4px;
   padding: 4px;
 }
+
+body.admin-page {
+  display: block; /* make sure body is block layout */
+}
+
+#user-table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+}
+
+#user-table th, #user-table td {
+  border: 1px solid #475569;
+  padding: 10px;
+}
+
+#logout {
+  display: block; /* make logout a block element */
+  width: 200px;   /* adjust width */
+  margin-top: 20px;
+  padding: 10px;
+  background: #14b8a6;
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
