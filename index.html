@@ -6,105 +6,54 @@
   <title>Login / Signup</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="index-page">
-  <div class="container">
-    <h2 id="form-title">Sign Up</h2>
+<body>
+<div class="container">
+  <h2 id="form-title">Sign Up</h2>
+  <form id="signup-form">
+    <input id="s-name" placeholder="Full name" required />
+    <input id="s-email" type="email" placeholder="Email" required />
+    <input id="s-pass" type="password" placeholder="Password" required />
+    <button type="submit">Sign Up</button>
+  </form>
 
-    <form id="signup-form">
-      <input id="s-name" placeholder="Full name" required />
-      <input id="s-email" type="email" placeholder="Email" required />
-      <input id="s-pass" type="password" placeholder="Password" required />
-      <button type="submit">Sign Up</button>
-    </form>
+  <form id="login-form" style="display:none">
+    <input id="l-email" type="email" placeholder="Email" required />
+    <input id="l-pass" type="password" placeholder="Password" required />
+    <button type="submit">Login</button>
+  </form>
 
-    <form id="login-form" style="display:none">
-      <input id="l-email" type="email" placeholder="Email" required />
-      <input id="l-pass" type="password" placeholder="Password" required />
-      <button type="submit">Login</button>
-    </form>
+  <div class="small" id="switch-form">Already have an account? Login</div>
+</div>
 
-    <div class="small" id="switch-form">Already have an account? Login</div>
-  </div>
+<script type="module">
+import { signup, login } from './main.js';
 
-  <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-  import { 
-    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, 
-    onAuthStateChanged, updateProfile 
-  } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-  import { 
-    getFirestore, doc, setDoc 
-  } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+const $ = id => document.getElementById(id);
+$('switch-form').onclick = () => {
+  const isSignup = $('signup-form').style.display !== 'none';
+  $('signup-form').style.display = isSignup ? 'none' : 'block';
+  $('login-form').style.display = isSignup ? 'block' : 'none';
+  $('form-title').innerText = isSignup ? 'Login' : 'Sign Up';
+};
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyA10rt9j5WUTp8-T0i7qcpWp1uIu3oI_Wc",
-    authDomain: "login-dashboard-4aa87.firebaseapp.com",
-    projectId: "login-dashboard-4aa87",
-    storageBucket: "login-dashboard-4aa87.firebasestorage.app",
-    messagingSenderId: "196276515757",
-    appId: "1:196276515757:web:c8420101386483f40de724",
-    measurementId: "G-LBEHKCTYLF"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  const ADMIN_EMAIL = "harrisonrobertwoods@gmail.com";
-  const $ = id => document.getElementById(id);
-
-  function showLogin() {
-    $('signup-form').style.display='none';
-    $('login-form').style.display='block';
-    $('form-title').innerText='Login';
-    $('switch-form').innerText='Need an account? Sign up';
+$('signup-form').onsubmit = async e => {
+  e.preventDefault();
+  try {
+    await signup($('s-name').value, $('s-email').value, $('s-pass').value);
+    alert("Account created!");
+  } catch (err) {
+    alert(err.message);
   }
+};
 
-  function showSignup() {
-    $('signup-form').style.display='block';
-    $('login-form').style.display='none';
-    $('form-title').innerText='Sign Up';
-    $('switch-form').innerText='Already have an account? Login';
+$('login-form').onsubmit = async e => {
+  e.preventDefault();
+  try {
+    await login($('l-email').value, $('l-pass').value);
+  } catch (err) {
+    alert(err.message);
   }
-
-  $('switch-form').onclick = () =>
-    ($('signup-form').style.display==='none' ? showSignup() : showLogin());
-
-  // Signup
-  $('signup-form').addEventListener('submit', async e => {
-    e.preventDefault();
-    const name = $('s-name').value.trim();
-    const email = $('s-email').value.trim();
-    const pass = $('s-pass').value;
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
-      await updateProfile(cred.user, { displayName: name });
-      await setDoc(doc(db, "users", cred.user.uid), { name, email });
-      alert('Account created! Redirecting...');
-      window.location.href = "dashboard.html";
-    } catch (err) { alert(err.message); }
-  });
-
-  // Login
-  $('login-form').addEventListener('submit', async e => {
-    e.preventDefault();
-    const email = $('l-email').value.trim();
-    const pass = $('l-pass').value;
-    try {
-      await signInWithEmailAndPassword(auth, email, pass);
-    } catch (err) { alert(err.message); }
-  });
-
-  // Redirect if logged in
-  onAuthStateChanged(auth, user => {
-    if (user) {
-      if (user.email === ADMIN_EMAIL) {
-        window.location.href = "admin.html";
-      } else {
-        window.location.href = "dashboard.html";
-      }
-    }
-  });
-  </script>
+};
+</script>
 </body>
 </html>
