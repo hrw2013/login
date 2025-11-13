@@ -1,39 +1,94 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>User Dashboard</title>
 <link rel="stylesheet" href="style.css">
+<style>
+body {
+  background: linear-gradient(135deg, #14532d, #16a34a); /* Green theme */
+  color: #f0fdf4;
+  font-family: system-ui;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+.container {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+button {
+  background: #22c55e;
+  color: black;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  padding: 10px;
+  width: 100%;
+  cursor: pointer;
+  margin-top: 10px;
+}
+#messages {
+  background: rgba(30, 58, 138, 0.4);
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 12px;
+  display: none;
+}
+</style>
 </head>
-<body>
+<body class="welcome-page">
 <div class="container">
-  <h2>Welcome <span id="user-name"></span></h2>
+  <h2>Welcome, <span id="user-name"></span>!</h2>
   <p>Email: <span id="user-email"></span></p>
-  <button id="view-msg">View My Messages</button>
+
+  <button id="view-messages">View My Messages</button>
   <div id="messages"></div>
+
   <button id="logout">Logout</button>
 </div>
 
 <script type="module">
-import { auth, logout, getUserMessage } from './main.js';
+import { auth, db, logout } from './main.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
 const $ = id => document.getElementById(id);
 
+// ✅ Check if user is logged in
 onAuthStateChanged(auth, async user => {
-  if (!user) return;
-  $('user-name').innerText = user.displayName;
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
+  $('user-name').innerText = user.displayName || "User";
   $('user-email').innerText = user.email;
 });
 
-$('view-msg').onclick = async () => {
+// ✅ Load messages
+$('view-messages').onclick = async () => {
   const user = auth.currentUser;
-  const msg = await getUserMessage(user.uid);
-  $('messages').innerText = msg || "No messages yet.";
+  if (!user) return;
+  const msgDoc = await getDoc(doc(db, "messages", user.uid));
+  $('messages').innerText = msgDoc.exists()
+    ? msgDoc.data().text
+    : "No messages from admin yet.";
+  $('messages').style.display = 'block';
 };
 
-$('logout').onclick = logout;
+// ✅ Logout
+$('logout').onclick = async () => {
+  await logout();
+  window.location.href = "index.html";
+};
 </script>
 </body>
 </html>
