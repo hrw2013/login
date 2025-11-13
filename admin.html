@@ -45,11 +45,21 @@ input {
   padding: 4px;
   width: 90%;
 }
+.message-all {
+  margin-top: 10px;
+}
 </style>
 </head>
 <body class="admin-page">
 <h2>Admin Dashboard</h2>
 <p id="admin-email"></p>
+
+<!-- Message All Section -->
+<div class="message-all">
+  <input id="msg-all" placeholder="Enter message for all users" style="width:70%;">
+  <button id="msg-all-btn">Message All</button>
+</div>
+
 <table id="user-table">
   <thead>
     <tr>
@@ -61,16 +71,15 @@ input {
   </thead>
   <tbody></tbody>
 </table>
+
 <button id="logout">Logout</button>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-import { 
-  getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot 
-} from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 
-// ✅ Firebase config
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyA10rt9j5WUTp8-T0i7qcpWp1uIu3oI_Wc",
   authDomain: "login-dashboard-4aa87.firebaseapp.com",
@@ -81,13 +90,13 @@ const firebaseConfig = {
   measurementId: "G-LBEHKCTYLF"
 };
 
-// ✅ Initialize Firebase
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const ADMIN_EMAIL = "harrisonrobertwoods@gmail.com";
 
-// ✅ Check admin login
+// Check admin login
 onAuthStateChanged(auth, async user => {
   if (!user || user.email !== ADMIN_EMAIL) {
     alert('Access denied. Redirecting to login.');
@@ -98,7 +107,7 @@ onAuthStateChanged(auth, async user => {
   loadUsersRealtime();
 });
 
-// ✅ Load users in real-time
+// Load users in real-time
 function loadUsersRealtime() {
   const tbody = document.querySelector('#user-table tbody');
   const usersCol = collection(db, "users");
@@ -128,7 +137,7 @@ function loadUsersRealtime() {
   });
 }
 
-// ✅ Send message to user
+// Send message to user
 window.sendMsg = async uid => {
   const text = document.getElementById('msg-' + uid).value;
   if (!text.trim()) return alert('Enter a message first.');
@@ -136,7 +145,7 @@ window.sendMsg = async uid => {
   alert('Message saved for user.');
 };
 
-// ✅ Delete user
+// Delete user
 window.delUser = async uid => {
   if (!confirm('Delete this user?')) return;
   await deleteDoc(doc(db, "users", uid));
@@ -144,8 +153,8 @@ window.delUser = async uid => {
   alert('User deleted.');
 };
 
-// ✅ Logout
-document.getElementById('logout').onclick = async () => {
+// Logout
+document.getElementById('logout').addEventListener('click', async () => {
   try {
     await signOut(auth);
     alert('Logged out successfully!');
@@ -154,32 +163,20 @@ document.getElementById('logout').onclick = async () => {
     console.error('Logout error:', err);
     alert('Logout failed: ' + err.message);
   }
-};
-  <!-- Message All Section -->
-<div style="margin-top: 10px;">
-  <input id="msg-all" placeholder="Enter message for all users" style="width:70%;">
-  <button id="msg-all-btn">Message All</button>
-</div>
-<div class="table-container">
-  <table id="user-table">
-    <thead>...</thead>
-    <tbody></tbody>
-  </table>
-</div>
-<button id="logout">Logout</button>
+});
 
-<table id="user-table">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Email</th>
-      <th>Message</th>
-      <th>Action</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-<button id="logout">Logout</button>
+// Message all users
+document.getElementById('msg-all-btn').addEventListener('click', async () => {
+  const text = document.getElementById('msg-all').value;
+  if (!text.trim()) return alert('Enter a message first.');
+  const usersCol = collection(db, "users");
+  const snapshot = await onSnapshot(usersCol, async snap => {
+    snap.forEach(async u => {
+      await setDoc(doc(db, "messages", u.id), { text });
+    });
+    alert('Message sent to all users.');
+  });
+});
 </script>
 </body>
 </html>
