@@ -155,6 +155,24 @@ document.getElementById('logout').onclick = async () => {
     alert('Logout failed: ' + err.message);
   }
 };
+  <!-- Message All Section -->
+<div style="margin-top: 10px;">
+  <input id="msg-all" placeholder="Enter message for all users" style="width:70%;">
+  <button id="msg-all-btn">Message All</button>
+</div>
+
+<table id="user-table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Message</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+<button id="logout">Logout</button>
 </script>
 </body>
 </html>
