@@ -32,7 +32,9 @@ button { padding: 10px 20px; margin: 5px; cursor: pointer; }
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, collection, getDocs, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { 
+  getFirestore, doc, setDoc, collection, getDocs, getDoc, serverTimestamp, deleteDoc 
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBEyexTkLjLq6t-ndDJaMT1je3iTsRMyks",
@@ -87,7 +89,24 @@ window.sendAll = async function () {
   });
   alert("Sent to all users!");
 };
+window.deleteAllMessages = async function () {
+  if (!confirm("Are you sure you want to delete messages for EVERYONE?")) return;
 
+  try {
+    const messagesSnapshot = await getDocs(collection(db, "messages"));
+    
+    // Create an array of delete promises to run them all at once
+    const deletePromises = messagesSnapshot.docs.map((docSnap) => 
+      deleteDoc(doc(db, "messages", docSnap.id))
+    );
+
+    await Promise.all(deletePromises);
+    alert("All messages have been cleared!");
+  } catch (error) {
+    console.error("Error deleting messages:", error);
+    alert("Failed to delete messages. Check console.");
+  }
+};
 window.logout = function () {
   signOut(auth).then(() => {
     window.location.href = "index.html";
@@ -96,3 +115,4 @@ window.logout = function () {
 </script>
 </body>
 </html>
+
