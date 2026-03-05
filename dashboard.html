@@ -17,6 +17,9 @@
 <div id="messageDisplay">
   <h3 id="msgText"></h3>
   <a id="msgLink" href="#" target="_blank">Click here</a>
+ <hr>
+<textarea id="replyText" placeholder="Type your reply..."></textarea><br>
+<button onclick="sendReply()">Send Reply</button>
 </div>
 
 <script type="module">
@@ -74,7 +77,26 @@ window.logout = function () {
     window.location.href = "index.html";
   });
 };
+ window.sendReply = async function() {
+    const text = document.getElementById("replyText").value;
+    if (!text) return alert("Please type something!");
+
+    try {
+        // We store the reply using the User's UID so the admin knows who sent it
+        await setDoc(doc(db, "replies", auth.currentUser.uid), {
+            uid: auth.currentUser.uid,
+            username: document.title, // Or fetch the actual username from your userSnap
+            message: text,
+            timestamp: serverTimestamp()
+        });
+        alert("Reply sent to admin!");
+        document.getElementById("replyText").value = ""; // Clear the box
+    } catch (error) {
+        console.error("Reply error:", error);
+    }
+};
 </script>
 </body>
 
 </html>
+
