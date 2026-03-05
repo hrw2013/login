@@ -10,7 +10,7 @@ button { padding: 10px 20px; margin: 5px; cursor: pointer; }
 </head>
 <body>
 
-<h1>Admin Panel 👑</h1>
+<h1>Admin Panel </h1>
 
 <h3>Send To One User</h3>
 <input type="text" id="targetUser" placeholder="Username"><br>
@@ -22,6 +22,9 @@ button { padding: 10px 20px; margin: 5px; cursor: pointer; }
 <input type="text" id="allText" placeholder="Message"><br>
 <input type="text" id="allLink" placeholder="Link"><br>
 <button onclick="sendAll()">Send To All</button>
+<button onclick="deleteAllMessages()" style="background-color: #ff4444; color: white;">
+  Delete All Messages 
+</button>
 
 <br><br>
 <button onclick="logout()">Logout</button>
