@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <title>Dashboard</title>
+ <style>
+   #messageDisplay { 
+     margin: 20px; padding: 20px; border: 2px solid #333; 
+     background: #f9f9f9; display: none; /* Hidden until a message exists */
+   }
+ </style>
+</head>
+<body>
+
+<h1>User Dashboard</h1>
+<button onclick="logout()">Logout</button>
+
+<div id="messageDisplay">
+  <h3 id="msgText"></h3>
+  <a id="msgLink" href="#" target="_blank">Click here</a>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBEyexTkLjLq6t-ndDJaMT1je3iTsRMyks",
+  authDomain: "login-f4cfb.firebaseapp.com",
+  projectId: "login-f4cfb",
+  storageBucket: "login-f4cfb.firebasestorage.app",
+  messagingSenderId: "549120000150",
+  appId: "1:549120000150:web:2cb8fa292be0eed87202b7"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
+
+  // 1. Check User Role
+  const userRef = doc(db, "users", user.uid);
+  const userSnap = await getDoc(userRef);
+
+  if (userSnap.exists() && userSnap.data().role === "admin") {
+    window.location.href = "admin.html";
+    return;
+  }
+
+  // 2. LISTEN FOR MESSAGES
+  // We look in the "messages" collection for a document named after the user's UID
+  onSnapshot(doc(db, "messages", user.uid), (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      document.getElementById("messageDisplay").style.display = "block";
+      document.getElementById("msgText").innerText = data.text;
+      document.getElementById("msgLink").href = data.link;
+    }
+  });
+});
+
+window.logout = function () {
+  signOut(auth).then(() => {
+    window.location.href = "index.html";
+  });
+};
+</script>
+</body>
+</html>
