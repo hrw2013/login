@@ -54,14 +54,19 @@ onAuthStateChanged(auth, async (user) => {
 
   // 2. LISTEN FOR MESSAGES
   // We look in the "messages" collection for a document named after the user's UID
-  onSnapshot(doc(db, "messages", user.uid), (docSnap) => {
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      document.getElementById("messageDisplay").style.display = "block";
-      document.getElementById("msgText").innerText = data.text;
-      document.getElementById("msgLink").href = data.link;
-    }
-  });
+ onSnapshot(doc(db, "messages", user.uid), (docSnap) => {
+  const displayBox = document.getElementById("messageDisplay");
+  
+  if (docSnap.exists()) {
+    const data = docSnap.data();
+    displayBox.style.display = "block";
+    document.getElementById("msgText").innerText = data.text;
+    document.getElementById("msgLink").href = data.link;
+    document.getElementById("msgLink").innerText = "View Link";
+  } else {
+    // If the document is deleted, hide the message box!
+    displayBox.style.display = "none";
+  }
 });
 
 window.logout = function () {
@@ -71,4 +76,5 @@ window.logout = function () {
 };
 </script>
 </body>
+
 </html>
