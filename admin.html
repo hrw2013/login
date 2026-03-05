@@ -11,7 +11,10 @@ button { padding: 10px 20px; margin: 5px; cursor: pointer; }
 <body>
 
 <h1>Admin Panel </h1>
-
+<h2>User Replies 💬</h2>
+<div id="replyList" style="border: 1px solid #ccc; padding: 10px; text-align: left; max-width: 500px; margin: auto;">
+    <p>Waiting for replies...</p>
+</div>
 <h3>Send To One User</h3>
 <input type="text" id="targetUser" placeholder="Username"><br>
 <input type="text" id="messageText" placeholder="Message"><br>
@@ -67,7 +70,32 @@ onAuthStateChanged(auth, async (user) => {
     console.error("Admin Access Error:", error);
   }
 });
+import { collection, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+// Listen for all documents in the "replies" collection
+onSnapshot(collection(db, "replies"), (snapshot) => {
+    const replyList = document.getElementById("replyList");
+    replyList.innerHTML = ""; // Clear the list
+
+    if (snapshot.empty) {
+        replyList.innerHTML = "<p>No replies yet.</p>";
+        return;
+    }
+
+    snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const replyDiv = document.createElement("div");
+        replyDiv.style.borderBottom = "1px solid #eee";
+        replyDiv.style.padding = "10px";
+        
+        replyDiv.innerHTML = `
+            <strong>User ID:</strong> ${docSnap.id}<br>
+            <strong>Message:</strong> ${data.message}<br>
+            <small>${data.timestamp?.toDate().toLocaleString() || "Sending..."}</small>
+        `;
+        replyList.appendChild(replyDiv);
+    });
+});
 window.sendOne = async function () {
   const user = document.getElementById("targetUser").value;
   await setDoc(doc(db, "messages", user), {
@@ -115,4 +143,5 @@ window.logout = function () {
 </script>
 </body>
 </html>
+
 
