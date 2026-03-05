@@ -25,7 +25,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, onSnapshot, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBEyexTkLjLq6t-ndDJaMT1je3iTsRMyks",
@@ -40,13 +40,39 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// --- GLOBAL FUNCTIONS (Move these out of the listener) ---
+window.logout = function () {
+  signOut(auth).then(() => {
+    window.location.href = "index.html";
+  }).catch((error) => {
+    console.error("Logout error:", error);
+  });
+};
+
+window.sendReply = async function() {
+    const text = document.getElementById("replyText").value;
+    if (!text) return alert("Please type something!");
+
+    try {
+        await setDoc(doc(db, "replies", auth.currentUser.uid), {
+            uid: auth.currentUser.uid,
+            message: text,
+            timestamp: serverTimestamp()
+        });
+        alert("Reply sent to admin!");
+        document.getElementById("replyText").value = ""; 
+    } catch (error) {
+        console.error("Reply error:", error);
+    }
+};
+
+// --- AUTH LISTENER ---
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = "index.html";
     return;
   }
 
-  // 1. Check User Role
   const userRef = doc(db, "users", user.uid);
   const userSnap = await getDoc(userRef);
 
@@ -55,48 +81,22 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  // 2. LISTEN FOR MESSAGES
-  // We look in the "messages" collection for a document named after the user's UID
- onSnapshot(doc(db, "messages", user.uid), (docSnap) => {
-  const displayBox = document.getElementById("messageDisplay");
-  
-  if (docSnap.exists()) {
-    const data = docSnap.data();
-    displayBox.style.display = "block";
-    document.getElementById("msgText").innerText = data.text;
-    document.getElementById("msgLink").href = data.link;
-    document.getElementById("msgLink").innerText = "View Link";
-  } else {
-    // If the document is deleted, hide the message box!
-    displayBox.style.display = "none";
-  }
-});
-
-window.logout = function () {
-  signOut(auth).then(() => {
-    window.location.href = "index.html";
-  });
-};
- window.sendReply = async function() {
-    const text = document.getElementById("replyText").value;
-    if (!text) return alert("Please type something!");
-
-    try {
-        // We store the reply using the User's UID so the admin knows who sent it
-        await setDoc(doc(db, "replies", auth.currentUser.uid), {
-            uid: auth.currentUser.uid,
-            username: document.title, // Or fetch the actual username from your userSnap
-            message: text,
-            timestamp: serverTimestamp()
-        });
-        alert("Reply sent to admin!");
-        document.getElementById("replyText").value = ""; // Clear the box
-    } catch (error) {
-        console.error("Reply error:", error);
+  onSnapshot(doc(db, "messages", user.uid), (docSnap) => {
+    const displayBox = document.getElementById("messageDisplay");
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      displayBox.style.display = "block";
+      document.getElementById("msgText").innerText = data.text;
+      document.getElementById("msgLink").href = data.link;
+      document.getElementById("msgLink").innerText = "View Link";
+    } else {
+      displayBox.style.display = "none";
     }
-};
+  });
+});
 </script>
 </body>
 
 </html>
+
 
