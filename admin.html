@@ -1,158 +1,236 @@
+```html
 <!DOCTYPE html>
 <html>
 <head>
 <title>Admin Panel</title>
+
 <style>
-    body { font-family: Arial; text-align: center; padding-top: 50px; background-color: #f4f4f9; }
-    .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0px 0px 10px rgba(0,0,0,0.1); }
-    input, textarea { padding: 10px; margin: 10px; width: 80%; border: 1px solid #ccc; border-radius: 5px; }
-    button { padding: 10px 20px; margin: 5px; cursor: pointer; border: none; border-radius: 5px; background-color: #007bff; color: white; }
-    button:hover { background-color: #0056b3; }
-    .reply-box { border-bottom: 1px solid #eee; padding: 10px; text-align: left; }
-    #replyList { margin-top: 20px; max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px; background: #fff; }
+body { font-family: Arial; text-align: center; padding-top: 50px; }
+input { padding: 10px; margin: 10px; width: 250px; }
+button { padding: 10px 20px; margin: 5px; }
+textarea { width: 250px; height: 80px; }
 </style>
+
 </head>
 <body>
 
-<div class="container">
-    <h1>Admin Panel 👑</h1>
+<h1>Admin Panel 👑</h1>
 
-    <h2>User Replies 💬</h2>
-    <div id="replyList">
-        <p>Waiting for replies...</p>
-    </div>
+<h3>Send To One User</h3>
+<input type="text" id="targetUser" placeholder="Username"><br>
+<input type="text" id="messageText" placeholder="Message"><br>
+<input type="text" id="messageLink" placeholder="Link"><br>
+<button onclick="sendOne()">Send</button>
 
-    <hr>
+<h3>Send To All Users</h3>
+<input type="text" id="allText" placeholder="Message"><br>
+<input type="text" id="allLink" placeholder="Link"><br>
+<button onclick="sendAll()">Send To All</button>
 
-    <h3>Send To One User</h3>
-    <input type="text" id="targetUser" placeholder="Paste User UID here"><br>
-    <input type="text" id="messageText" placeholder="Message"><br>
-    <input type="text" id="messageLink" placeholder="Link (include https://)"><br>
-    <button onclick="sendOne()">Send to User</button>
+<br><br>
+<button onclick="logout()">Logout</button>
 
-    <h3>Broadcast</h3>
-    <input type="text" id="allText" placeholder="Message to everyone"><br>
-    <input type="text" id="allLink" placeholder="Link (include https://)"><br>
-    <button onclick="sendAll()">Send To All</button>
-    
-    <br><br>
-    
-    <button onclick="deleteAllMessages()" style="background-color: #ff4444;">
-      Delete All Sent Messages 🗑️
-    </button>
+<hr>
 
-    <br><hr><br>
-    <button onclick="logout()" style="background-color: #6c757d;">Logout</button>
+<h2>Inbox</h2>
+
+<div id="adminInbox"></div>
+
+<div id="adminReplyBox" style="display:none; margin-top:20px;">
+<h3>Reply</h3>
+<div id="replyingTo"></div>
+<textarea id="adminReplyMessage" placeholder="Type reply"></textarea>
+<br><br>
+<button id="sendAdminReply">Send Reply</button>
 </div>
 
 <script type="module">
-// 1. ALL IMPORTS AT THE TOP
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { 
-    getFirestore, doc, setDoc, collection, getDocs, getDoc, 
-    serverTimestamp, deleteDoc, onSnapshot, query, orderBy 
+
+import {
+getAuth,
+onAuthStateChanged,
+signOut
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+import {
+getFirestore,
+doc,
+setDoc,
+collection,
+getDocs,
+getDoc,
+onSnapshot,
+query,
+where,
+addDoc,
+serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-// 2. CONFIG
 const firebaseConfig = {
-    apiKey: "AIzaSyBEyexTkLjLq6t-ndDJaMT1je3iTsRMyks",
-    authDomain: "login-f4cfb.firebaseapp.com",
-    projectId: "login-f4cfb",
-    storageBucket: "login-f4cfb.firebasestorage.app",
-    messagingSenderId: "549120000150",
-    appId: "1:549120000150:web:2cb8fa292be0eed87202b7"
+apiKey: "AIzaSyBEyexTkLjLq6t-ndDJaMT1je3iTsRMyks",
+authDomain: "login-f4cfb.firebaseapp.com",
+projectId: "login-f4cfb",
+storageBucket: "login-f4cfb.firebasestorage.app",
+messagingSenderId: "549120000150",
+appId: "1:549120000150:web:2cb8fa292be0eed87202b7"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// 3. AUTH & SECURITY CHECK
+const targetUser = document.getElementById("targetUser");
+const messageText = document.getElementById("messageText");
+const messageLink = document.getElementById("messageLink");
+
+const allText = document.getElementById("allText");
+const allLink = document.getElementById("allLink");
+
+const inboxDiv = document.getElementById("adminInbox");
+const replyBox = document.getElementById("adminReplyBox");
+const replyingToText = document.getElementById("replyingTo");
+
+let currentReplyConversation = null;
+let currentReplyUser = null;
+
+/* ---------- AUTH CHECK ---------- */
+
 onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-        window.location.href = "index.html";
-        return;
-    }
 
-    try {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
+if (!user) {
+window.location.href = "index.html";
+return;
+}
 
-        if (!userSnap.exists() || userSnap.data().role !== "admin") {
-            alert("Access Denied: Admins Only.");
-            window.location.href = "dashboard.html";
-        }
-    } catch (error) {
-        console.error("Admin Access Error:", error);
-    }
+const username = user.email.split("@")[0];
+
+const userDoc = await getDoc(doc(db, "users", username));
+
+if (!userDoc.exists() || userDoc.data().role !== "admin") {
+window.location.href = "dashboard.html";
+}
+
 });
 
-// 4. LISTEN FOR REPLIES (Real-time)
-onSnapshot(collection(db, "replies"), (snapshot) => {
-    const replyList = document.getElementById("replyList");
-    replyList.innerHTML = ""; 
+/* ---------- SEND TO ONE USER ---------- */
 
-    if (snapshot.empty) {
-        replyList.innerHTML = "<p style='padding:10px;'>No replies yet.</p>";
-        return;
-    }
-
-    snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const replyDiv = document.createElement("div");
-        replyDiv.className = "reply-box";
-        
-        replyDiv.innerHTML = `
-            <strong>User UID:</strong> <small>${docSnap.id}</small><br>
-            <strong>Message:</strong> ${data.message}<br>
-            <small style="color:gray;">${data.timestamp?.toDate().toLocaleString() || "Just now"}</small>
-        `;
-        replyList.appendChild(replyDiv);
-    });
-});
-
-// 5. GLOBAL FUNCTIONS
 window.sendOne = async function () {
-    const uid = document.getElementById("targetUser").value.trim();
-    if(!uid) return alert("Please enter a User UID");
 
-    await setDoc(doc(db, "messages", uid), {
-        text: document.getElementById("messageText").value,
-        link: document.getElementById("messageLink").value,
-        timestamp: serverTimestamp()
-    });
-    alert("Message sent to user!");
+const user = targetUser.value;
+
+await setDoc(doc(db, "messages", user), {
+text: messageText.value,
+link: messageLink.value
+});
+
+alert("Message sent!");
+
 };
+
+/* ---------- SEND TO ALL USERS ---------- */
 
 window.sendAll = async function () {
-    const text = document.getElementById("allText").value;
-    const link = document.getElementById("allLink").value;
-    
-    const usersSnapshot = await getDocs(collection(db, "users"));
-    const promises = usersSnapshot.docs.map(userDoc => 
-        setDoc(doc(db, "messages", userDoc.id), {
-            text: text,
-            link: link,
-            timestamp: serverTimestamp()
-        })
-    );
-    
-    await Promise.all(promises);
-    alert("Sent to all users!");
+
+const usersSnapshot = await getDocs(collection(db, "users"));
+
+usersSnapshot.forEach(async (docSnap) => {
+
+await setDoc(doc(db, "messages", docSnap.id), {
+text: allText.value,
+link: allLink.value
+});
+
+});
+
+alert("Sent to all users!");
+
 };
 
-window.deleteAllMessages = async function () {
-    if (!confirm("Clear all outgoing messages?")) return;
-    const snap = await getDocs(collection(db, "messages"));
-    const promises = snap.docs.map(d => deleteDoc(d.ref));
-    await Promise.all(promises);
-    alert("Cleaned!");
-};
+/* ---------- LOGOUT ---------- */
 
 window.logout = function () {
-    signOut(auth).then(() => { window.location.href = "index.html"; });
+signOut(auth).then(() => window.location.href = "index.html");
 };
+
+/* ---------- REALTIME ADMIN INBOX ---------- */
+
+onAuthStateChanged(auth, (user) => {
+
+if (!user) return;
+
+const q = query(
+collection(db, "conversations"),
+where("participants", "array-contains", user.uid)
+);
+
+onSnapshot(q, (snapshot) => {
+
+inboxDiv.innerHTML = "";
+
+snapshot.forEach((docSnap) => {
+
+const convo = docSnap.data();
+
+const otherUser = convo.participants.find(p => p !== user.uid);
+
+const convoDiv = document.createElement("div");
+
+convoDiv.style.border = "1px solid black";
+convoDiv.style.padding = "10px";
+convoDiv.style.marginBottom = "10px";
+
+convoDiv.innerHTML = `
+<strong>User:</strong> ${otherUser}
+<br>
+<button onclick="openReply('${docSnap.id}', '${otherUser}')">Reply</button>
+`;
+
+inboxDiv.appendChild(convoDiv);
+
+});
+
+});
+
+});
+
+/* ---------- OPEN REPLY ---------- */
+
+window.openReply = function(convoId, userId) {
+
+currentReplyConversation = convoId;
+currentReplyUser = userId;
+
+replyBox.style.display = "block";
+
+replyingToText.innerText = "Replying to: " + userId;
+
+};
+
+/* ---------- SEND ADMIN REPLY ---------- */
+
+document.getElementById("sendAdminReply").onclick = async () => {
+
+const text = document.getElementById("adminReplyMessage").value;
+
+if (!text) return;
+
+await addDoc(
+collection(db, "conversations", currentReplyConversation, "messages"),
+{
+sender: auth.currentUser.uid,
+text: text,
+timestamp: serverTimestamp()
+}
+);
+
+document.getElementById("adminReplyMessage").value = "";
+
+};
+
 </script>
+
 </body>
 </html>
+```
